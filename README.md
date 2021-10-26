@@ -1,7 +1,7 @@
 # cdson
 
 A pure C parser library for the [DSON](https://dogeon.xyz/) data serialization
-format.
+format, for humans.
 
 ## To build
 
@@ -9,7 +9,7 @@ format.
 mkdir build
 cd build
 meson ..
-ninja
+ninja test
 sudo ninja install
 ```
 
