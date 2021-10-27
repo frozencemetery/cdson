@@ -9,8 +9,8 @@ format, for humans.
 mkdir build
 cd build
 meson ..
-ninja test
-sudo ninja install
+meson test # optional
+sudo meson install
 ```
 
 ## To use
