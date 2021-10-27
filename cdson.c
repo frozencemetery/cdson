@@ -20,6 +20,24 @@
         exit(1);                                                        \
     } while (0)
 
+struct dson_dict {
+    char **keys;
+    char **values;
+};
+
+char *dson_dict_get(dson_dict *d, char *key) {
+    size_t i;
+
+    if (d == NULL)
+        return NULL;
+
+    for (i = 0; d->keys[i] != NULL && !strcmp(key, d->keys[i]); i++);
+    if (d->keys[i] == NULL)
+        return NULL;
+
+    return d->values[i];
+}
+
 void dson_free(dson_value **v) {
     if (v == NULL)
         return;

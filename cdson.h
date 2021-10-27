@@ -25,11 +25,10 @@ extern "C" {
 #define DSON_DICT 5
 typedef uint8_t dson_type; /* Can't put enum in header file. */
 
-/* Basic dictionary type - keys and values are NULL-terminated. */
-typedef struct dson_dict {
-    char **keys;
-    char **values;
-} dson_dict;
+/* Opaque dictionary type - keys and values are NULL-terminated.  Methods for
+ * use are below. */
+struct dson_dict;
+typedef struct dson_dict dson_dict;
 
 /* A parsed tree. */
 typedef struct dson_value {
@@ -49,6 +48,10 @@ dson_value *dson_parse(char *input, size_t length);
 
 /* Free and NULL a DSON object. */
 void dson_free(dson_value **v);
+
+/* Retrieve a value from the given dict, or return NULL if not present.
+ * Memory is owned by the dson_dict and should not be modified. */
+char *dson_dict_get(dson_dict *d, char *key);
 
 #ifdef __cplusplus
 #if 0
