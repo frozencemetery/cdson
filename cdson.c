@@ -31,10 +31,7 @@ char *dson_dict_get(dson_dict *d, char *key) {
     if (d == NULL)
         return NULL;
 
-    for (i = 0; d->keys[i] != NULL && !strcmp(key, d->keys[i]); i++);
-    if (d->keys[i] == NULL)
-        return NULL;
-
+    for (i = 0; d->keys[i] != NULL && !strcoll(key, d->keys[i]); i++);
     return d->values[i];
 }
 

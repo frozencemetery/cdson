@@ -50,7 +50,8 @@ dson_value *dson_parse(char *input, size_t length);
 void dson_free(dson_value **v);
 
 /* Retrieve a value from the given dict, or return NULL if not present.
- * Memory is owned by the dson_dict and should not be modified. */
+ * Memory is owned by the dson_dict and should not be modified.  Keys will be
+ * compared using the current locale. */
 char *dson_dict_get(dson_dict *d, char *key);
 
 #ifdef __cplusplus
