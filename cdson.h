@@ -36,7 +36,10 @@ typedef struct dson_value {
     union {
         bool b;
         double n;
-        char *s;
+        struct { /* It's technically possible to have NUL in s. */
+            char *s;
+            size_t s_len;
+        };
         struct dson_value **value;
         dson_dict *dict;
     };
@@ -52,7 +55,7 @@ void dson_free(dson_value **v);
 /* Retrieve a value from the given dict, or return NULL if not present.
  * Memory is owned by the dson_dict and should not be modified.  Keys will be
  * compared using the current locale. */
-char *dson_dict_get(dson_dict *d, char *key);
+dson_value *dson_dict_get(dson_dict *d, char *key);
 
 #ifdef __cplusplus
 #if 0

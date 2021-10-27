@@ -22,10 +22,10 @@
 
 struct dson_dict {
     char **keys;
-    char **values;
+    dson_value **values;
 };
 
-char *dson_dict_get(dson_dict *d, char *key) {
+dson_value *dson_dict_get(dson_dict *d, char *key) {
     size_t i;
 
     if (d == NULL)
