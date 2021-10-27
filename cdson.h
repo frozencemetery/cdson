@@ -40,7 +40,7 @@ typedef struct dson_value {
             char *s;
             size_t s_len;
         };
-        struct dson_value **value;
+        struct dson_value **array;
         dson_dict *dict;
     };
 } dson_value;
@@ -49,7 +49,7 @@ typedef struct dson_value {
  * trailing NUL.  Returns NULL on failure. */
 dson_value *dson_parse(char *input, size_t length);
 
-/* Free and NULL a DSON object. */
+/* Recursively free and NULL a DSON object. */
 void dson_free(dson_value **v);
 
 /* Retrieve a value from the given dict, or return NULL if not present.

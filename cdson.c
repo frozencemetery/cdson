@@ -39,6 +39,19 @@ void dson_free(dson_value **v) {
     if (v == NULL)
         return;
 
+    if ((*v)->type == DSON_STRING) {
+        free((*v)->s);
+    } else if ((*v)->type == DSON_ARRAY) {
+        for (size_t i = 0; (*v)->array[i] != NULL; i++)
+            dson_free(&(*v)->array[i]);
+    } else if ((*v)->type == DSON_DICT) {
+        for (size_t i = 0; (*v)->dict->keys[i] != NULL; i++) {
+            free((*v)->dict->keys[i]);
+            dson_free(&(*v)->dict->values[i]);
+        }
+        free((*v)->dict);
+    }
+
     free(*v);
     *v = NULL;
 }
