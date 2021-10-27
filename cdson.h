@@ -25,8 +25,9 @@ extern "C" {
 #define DSON_DICT 5
 typedef uint8_t dson_type; /* Can't put enum in header file. */
 
-/* Opaque dictionary type - keys and values are NULL-terminated.  Methods for
- * use are below. */
+/* Opaque dictionary type - keys and values are NULL-terminated.  Do not put
+ * NUL-bytes in your keys: you will have a bad time.  Methods for use are
+ * below. */
 struct dson_dict;
 typedef struct dson_dict dson_dict;
 
@@ -37,7 +38,7 @@ typedef struct dson_value {
         bool b;
         double n;
         struct { /* It's technically possible to have NUL in s. */
-            char *s;
+            char *s; /* Currently, can potentially be invalid UTF-8. */
             size_t s_len;
         };
         struct dson_value **array;
