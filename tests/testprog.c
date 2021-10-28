@@ -50,14 +50,6 @@ static void values_match(dson_value *d1, dson_value *d2) {
     dson_free(&d2);
 }
 
-static inline void check_eq(double left, double right) {
-    if (left == right)
-        return;
-
-    fprintf(stderr, "Failed: expected %f, but got %f\n", right, left);
-    exit(1);
-}
-
 #define SHIBA(v, s) values_match(&v, dson_parse(s, strlen(s)))
 
 int main() {
