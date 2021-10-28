@@ -14,7 +14,8 @@
 /* very TODO: hard error unfriendly to doge. */
 #define ERROR                                                           \
     do {                                                                \
-        fprintf(stderr, "Failure: %s() line %d\n", __FUNCTION__, __LINE__); \
+        fprintf(stderr, "Failure: %s() line %d, input character %ld\n", \
+                __FUNCTION__, __LINE__, c->s - c->beginning);           \
         exit(1);                                                        \
     } while (0)
 
@@ -26,6 +27,7 @@ struct dson_dict {
 typedef struct {
     char *s;
     char *s_end;
+    char *beginning;
 } context;
 
 /* much nonstandard.  no overflow.  wow. */
@@ -61,6 +63,8 @@ void dson_free(dson_value **v) {
     free(*v);
     *v = NULL;
 }
+
+/* many parser.  such descent.  recur.  excite */
 
 static inline char peek(context *c) {
     return *c->s;
@@ -118,7 +122,7 @@ static bool p_bool(context *c) {
 
 /* very TODO: this doesn't do *any* validity checking. */
 static char *p_string(context *c, size_t *length_out) {
-    char *start, *s, *e, *out;
+    char *start, *end, *out;
     size_t num_escapes, length, i = 0;
 
     *length_out = 0;
@@ -129,12 +133,12 @@ static char *p_string(context *c, size_t *length_out) {
 
     /* many traversal.  such length. */
     while (1) {
-        s = p_char(c);
-        if (*s == '"') {
+        end = p_char(c);
+        if (*end == '"') {
             break;
-        } else if (*s == '\\') {
-            e = p_char(c);
-            if (*e == 'u')
+        } else if (*end == '\\') {
+            end = p_char(c);
+            if (*end == 'u')
                 ERROR; /* very TODO */
             else
                 num_escapes++;
@@ -142,32 +146,32 @@ static char *p_string(context *c, size_t *length_out) {
     }
 
     start++; /* wow '"' */
-    length = s - start - num_escapes + 1;
+    length = end - start - num_escapes + 1;
 
     out = malloc(length);
     if (out == NULL)
         ERROR;
 
-    for (char *c = start; c < s; c++) {
-        if (*c != '\\') {
-            out[i++] = *c;
+    for (char *p = start; p < end; p++) {
+        if (*p != '\\') {
+            out[i++] = *p;
             continue;
         }
 
-        c++;
-        if (*c == '"' || *c == '\\' || *c == '/') {
-            out[i++] = *c;
-        } else if (*c == 'b') {
+        p++;
+        if (*p == '"' || *p == '\\' || *p == '/') {
+            out[i++] = *p;
+        } else if (*p == 'b') {
             out[i++] = '\b';
-        } else if (*c == 'f') {
+        } else if (*p == 'f') {
             out[i++] = '\f';
-        } else if (*c == 'n') {
+        } else if (*p == 'n') {
             out[i++] = '\n';
-        } else if (*c == 'r') {
+        } else if (*p == 'r') {
             out[i++] = '\r';
-        } else if (*c == 't') {
+        } else if (*p == 't') {
             out[i++] = '\t';
-        } else if (*c == 'u') {
+        } else if (*p == 'u') {
             ERROR; /* very TODO */
         } else {
             ERROR;
@@ -400,7 +404,7 @@ dson_value *dson_parse(char *input, size_t length) {
     context c;
 
     input[length] = '\0'; /* much explosion */
-    c.s = input;
+    c.s = c.beginning = input;
     c.s_end = input + length;
 
     return p_value(&c);
