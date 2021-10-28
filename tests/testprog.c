@@ -18,8 +18,6 @@ static void values_match(dson_value *d1, dson_value *d2) {
     } else if (d1->type != d2->type) {
         fprintf(stderr, "type mismatch: %d vs. %d\n", d1->type, d2->type);
         exit(1);
-    } else if (d1->type == DSON_NONE) {
-        return;
     } else if (d1->type == DSON_BOOL && d1->b != d2->b) {
         fprintf(stderr, "bool mismatch: %d vs. %d\n", d1->b, d2->b);
         exit(1);
