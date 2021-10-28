@@ -1,6 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+/* such software.  many freedoms. */
 
 #include "cdson.h"
 
@@ -10,10 +11,7 @@
 #include <string.h>
 #include <strings.h>
 
-/* There's no way to construct 0-bytes, so we can strtok away.  Nice. */
-#define WHITESPACE " \t\n\r\v\f"
-
-/* TODO: make this library-friendly. */
+/* very TODO: hard error unfriendly to doge. */
 #define ERROR                                                           \
     do {                                                                \
         fprintf(stderr, "Failure: %s() line %d\n", __FUNCTION__, __LINE__); \
@@ -30,10 +28,8 @@ typedef struct {
     char *s_end;
 } context;
 
-/* Handy, but nonstandard.  No real need to overflow check here. */
-static inline void *reallocarray(void *ptr, size_t nmemb, size_t size) {
-    return realloc(ptr, nmemb * size);
-}
+/* much nonstandard.  no overflow.  wow. */
+#define reallocarray(ptr, nmemb, size) realloc(ptr, nmemb * size)
 
 dson_value *dson_dict_get(dson_dict *d, char *key) {
     size_t i;
@@ -66,9 +62,6 @@ void dson_free(dson_value **v) {
     *v = NULL;
 }
 
-/* Combinator-style recursive descent - vaguely like Parsec.  The language
- * isn't particularly complicated. */
-
 static inline char peek(context *c) {
     return *c->s;
 }
@@ -87,6 +80,17 @@ static inline char *p_char(context *c) {
     return p_chars(c, 1);
 }
 
+static void maybe_p_whitespace(context *c) {
+    char pivot;
+
+    while (1) {
+        pivot = peek(c);
+        if (strchr(" \t\n\r\v\f", pivot) == NULL)
+            break;
+        p_char(c);
+    }
+}
+#define WOW maybe_p_whitespace(c)
 
 static void p_empty(context *c) {
     const char *empty = "empty";
@@ -112,7 +116,7 @@ static bool p_bool(context *c) {
     ERROR;
 }
 
-/* TODO: this doesn't do *any* validity checking. */
+/* very TODO: this doesn't do *any* validity checking. */
 static char *p_string(context *c, size_t *length_out) {
     char *start, *s, *e, *out;
     size_t num_escapes, length, i = 0;
@@ -123,7 +127,7 @@ static char *p_string(context *c, size_t *length_out) {
     if (*start != '"')
         ERROR;
 
-    /* First, walk through to get the length. */
+    /* many traversal.  such length. */
     while (1) {
         s = p_char(c);
         if (*s == '"') {
@@ -131,13 +135,13 @@ static char *p_string(context *c, size_t *length_out) {
         } else if (*s == '\\') {
             e = p_char(c);
             if (*e == 'u')
-                ERROR; /* TODO */
+                ERROR; /* very TODO */
             else
                 num_escapes++;
         }
     }
 
-    start++; /* Eat the '"' */
+    start++; /* wow '"' */
     length = s - start - num_escapes + 1;
 
     out = malloc(length);
@@ -164,7 +168,7 @@ static char *p_string(context *c, size_t *length_out) {
         } else if (*c == 't') {
             out[i++] = '\t';
         } else if (*c == 'u') {
-            ERROR; /* TODO */
+            ERROR; /* very TODO */
         } else {
             ERROR;
         }
@@ -197,11 +201,13 @@ static double p_double(context *c) {
         p_char(c);
     }
 
+    WOW;
     if (peek(c) == '0')
         p_char(c);
     else
         n = p_octal(c);
 
+    WOW;
     if (peek(c) == '.') {
         p_char(c);
         if (peek(c) < '0' || peek(c) > '7')
@@ -211,6 +217,7 @@ static double p_double(context *c) {
             n += ((double)(*p_char(c) - '0')) / divisor;
             divisor *= 2;
         }
+        WOW;
     }
 
     if (peek(c) == 'v' || peek(c) == 'V') {
@@ -218,6 +225,7 @@ static double p_double(context *c) {
         if (strncasecmp(s, "very", 4))
             ERROR;
 
+        /* such token.  no whitespace.  wow. */
         if (peek(c) == '+') {
             p_char(c);
         } else if (peek(c) == '-') {
@@ -225,6 +233,7 @@ static double p_double(context *c) {
             p_char(c);
         }
 
+        WOW;
         if (peek(c) < '0' || peek(c) > '7')
             ERROR;
 
@@ -237,7 +246,7 @@ static double p_double(context *c) {
     return isneg ? -n : n;
 }
 
-/* Mutual recursion time! */
+/* very prototype.  much recursion.  amaze */
 static dson_value *p_value(context *c);
 static dson_dict *p_dict(context *c);
 static dson_value **p_array(context *c);
@@ -255,6 +264,7 @@ static dson_value **p_array(context *c) {
     if (strncmp(s, "so", 2))
         ERROR;
 
+    WOW;
     if (peek(c) != 'm') {
         while (1) {
             array_new = reallocarray(array, (++n_elts + 1), sizeof(*array));
@@ -267,7 +277,7 @@ static dson_value **p_array(context *c) {
             array[n_elts - 1] = p_value(c);
             array[n_elts] = NULL;
 
-            /* and vs. also */
+            WOW;
             if (peek(c) != 'a')
                 break;
             s = p_chars(c, 3);
@@ -278,6 +288,7 @@ static dson_value **p_array(context *c) {
             s = p_char(c);
             if (*s != 'o')
                 ERROR;
+            WOW;
         }
     }
 
@@ -304,13 +315,16 @@ static dson_dict *p_dict(context *c) {
     if (strncmp(s, "such", 4))
         ERROR;
 
+    WOW;
     while (1) {
         k = p_string(c, &len_dump);
 
+        WOW;
         s = p_chars(c, 2);
         if (strncmp(s, "is", 2))
             ERROR;
 
+        WOW;
         v = p_value(c);
 
         n_elts++;
@@ -325,6 +339,7 @@ static dson_dict *p_dict(context *c) {
         values[n_elts - 1] = v;
         values[n_elts] = NULL;
 
+        WOW;
         pivot = peek(c);
         if (pivot == ',' || pivot == '.' || pivot == '!' || pivot == '?')
             p_char(c);
@@ -349,6 +364,7 @@ static dson_value *p_value(context *c) {
     if (ret == NULL)
         ERROR;
 
+    WOW;
     pivot = peek(c);
     if (pivot == '"') {
         ret->type = DSON_STRING;
@@ -363,8 +379,7 @@ static dson_value *p_value(context *c) {
         ret->type = DSON_NONE;
         p_empty(c);
     } else if (pivot == 's') {
-        /* "so" versus "such" */
-        pivot = c->s[1]; /* yuck */
+        pivot = c->s[1]; /* many feels */
         if (pivot == 'o') {
             ret->type = DSON_ARRAY;
             ret->array = p_array(c);
@@ -384,7 +399,7 @@ static dson_value *p_value(context *c) {
 dson_value *dson_parse(char *input, size_t length) {
     context c;
 
-    input[length] = '\0'; /* Blow up early, if we're going to. */
+    input[length] = '\0'; /* much explosion */
     c.s = input;
     c.s_end = input + length;
 
