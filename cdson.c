@@ -25,9 +25,9 @@ struct dson_dict {
 };
 
 typedef struct {
-    char *s;
-    char *s_end;
-    char *beginning;
+    const char *s;
+    const char *s_end;
+    const char *beginning;
 } context;
 
 /* much nonstandard.  no overflow.  wow. */
@@ -70,17 +70,17 @@ static inline char peek(context *c) {
     return *c->s;
 }
 
-static char *p_chars(context *c, size_t n) {
-    char *cur = c->s;
+static const char *p_chars(context *c, size_t n) {
+    const char *cur = c->s;
 
-    if (c->s + n >= c->s_end)
+    if (c->s + n > c->s_end)
         ERROR;
 
     c->s += n;
     return cur;
 }
 
-static inline char *p_char(context *c) {
+static inline const char *p_char(context *c) {
     return p_chars(c, 1);
 }
 
@@ -89,7 +89,7 @@ static void maybe_p_whitespace(context *c) {
 
     while (1) {
         pivot = peek(c);
-        if (strchr(" \t\n\r\v\f", pivot) == NULL)
+        if (pivot == '\0' || strchr(" \t\n\r\v\f", pivot) == NULL)
             break;
         p_char(c);
     }
@@ -98,7 +98,7 @@ static void maybe_p_whitespace(context *c) {
 
 static void p_empty(context *c) {
     const char *empty = "empty";
-    char *s;
+    const char *s;
 
     s = p_chars(c, strlen(empty));
     if (memcmp(empty, s, strlen(empty)))
@@ -106,7 +106,7 @@ static void p_empty(context *c) {
 }
 
 static bool p_bool(context *c) {
-    char *s;
+    const char *s;
 
     s = p_chars(c, 2);
     if (s[0] == 'y' && s[1] == 'e') {
@@ -122,7 +122,8 @@ static bool p_bool(context *c) {
 
 /* very TODO: this doesn't do *any* validity checking. */
 static char *p_string(context *c, size_t *length_out) {
-    char *start, *end, *out;
+    const char *start, *end;
+    char *out;
     size_t num_escapes, length, i = 0;
 
     *length_out = 0;
@@ -152,7 +153,7 @@ static char *p_string(context *c, size_t *length_out) {
     if (out == NULL)
         ERROR;
 
-    for (char *p = start; p < end; p++) {
+    for (const char *p = start; p < end; p++) {
         if (*p != '\\') {
             out[i++] = *p;
             continue;
@@ -184,7 +185,7 @@ static char *p_string(context *c, size_t *length_out) {
 
 static double p_octal(context *c) {
     double n = 0;
-    char *s;
+    const char *s;
 
     while (peek(c) >= '0' && peek(c) <= '7') {
         n *= 010;
@@ -198,7 +199,7 @@ static double p_octal(context *c) {
 static double p_double(context *c) {
     bool isneg = false, powneg = false;
     double n = 0, divisor = 010, power = 0;
-    char *s;
+    const char *s;
 
     if (peek(c) == '-') {
         isneg = true;
@@ -256,7 +257,7 @@ static dson_dict *p_dict(context *c);
 static dson_value **p_array(context *c);
 
 static dson_value **p_array(context *c) {
-    char *s;
+    const char *s;
     dson_value **array, **array_new;
     size_t n_elts = 0;
 
@@ -305,7 +306,8 @@ static dson_value **p_array(context *c) {
 
 static dson_dict *p_dict(context *c) {
     dson_dict *dict;
-    char **keys, **keys_new, *s, *k, pivot;
+    char **keys, **keys_new, *k, pivot;
+    const char *s;
     dson_value **values, **values_new, *v;
     size_t n_elts = 0, len_dump;
 
@@ -400,10 +402,12 @@ static dson_value *p_value(context *c) {
     return ret;
 }
 
-dson_value *dson_parse(char *input, size_t length) {
+dson_value *dson_parse(const char *input, size_t length) {
     context c;
 
-    input[length] = '\0'; /* much explosion */
+    if (input[length] != '\0')
+        return NULL; /* much explosion */
+
     c.s = c.beginning = input;
     c.s_end = input + length;
 

@@ -48,7 +48,7 @@ typedef struct dson_value {
 
 /* Parse DSON from a NUL-terminated utf-8 stream.  Length does not include the
  * trailing NUL.  Returns NULL on failure. */
-dson_value *dson_parse(char *input, size_t length);
+dson_value *dson_parse(const char *input, size_t length);
 
 /* Recursively free and NULL a DSON object. */
 void dson_free(dson_value **v);

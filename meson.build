@@ -16,14 +16,9 @@ libcdson = library('libcdson', 'cdson.c', 'cdson.h',
 
 install_headers('cdson.h')
 
-buildtest = executable('buildtest', 'tests/buildtest.c',
-                       dependencies: deps,
-                       link_with: libcdson,
-                       install: false)
-test('buildtest', buildtest)
-
 testprog = executable('testprog', 'tests/testprog.c',
                       dependencies: deps,
+                      link_with: libcdson,
                       install: false)
 test('testprog', testprog)
 
