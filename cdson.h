@@ -58,6 +58,11 @@ void dson_free(dson_value **v);
  * compared using the current locale. */
 dson_value *dson_dict_get(dson_dict *d, char *key);
 
+/* Return a NULL-terminated, order-preserving list of the keys in a dict.
+ * Keys should not be modified (but are not marked const because C doesn't
+ * nest that well). */
+char **dson_dict_keys(dson_dict *d);
+
 #ifdef __cplusplus
 #if 0
 {

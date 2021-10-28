@@ -33,6 +33,10 @@ typedef struct {
 /* much nonstandard.  no overflow.  wow. */
 #define reallocarray(ptr, nmemb, size) realloc(ptr, nmemb * size)
 
+char **dson_dict_keys(dson_dict *d) {
+    return d->keys;
+}
+
 dson_value *dson_dict_get(dson_dict *d, char *key) {
     size_t i;
 

@@ -9,6 +9,8 @@
 
 static void values_match(dson_value *d1, dson_value *d2) {
     size_t i;
+    char **keys1, **keys2;
+    dson_value *v1, *v2;
 
     if (d1 == NULL && d2 == NULL) {
         return;
@@ -42,7 +44,24 @@ static void values_match(dson_value *d1, dson_value *d2) {
             exit(1);
         }
     } else if (d1->type == DSON_DICT) {
-        /* haha, oops... uh... TODO */
+        keys1 = dson_dict_keys(d1->dict);
+        keys2 = dson_dict_keys(d2->dict);
+
+        for (i = 0; keys1[i] != NULL && keys2[i] != NULL; i++) {
+            if (strcmp(keys1[i], keys2[i])) {
+                fprintf(stderr, "key mismatch: \"%s\" vs. \"%s\"\n", keys1[i],
+                        keys2[i]);
+                exit(1);
+            }
+
+            v1 = dson_dict_get(d1->dict, keys1[i]);
+            v2 = dson_dict_get(d2->dict, keys1[i]);
+            values_match(v1, v2);
+        }
+        if (keys1[i] != NULL || keys2[i] != NULL) {
+            fprintf(stderr, "dict size mismatch\n");
+            exit(1);
+        }
     }
 
     dson_free(&d2);
