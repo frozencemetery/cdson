@@ -39,12 +39,17 @@ char **dson_dict_keys(dson_dict *d) {
 
 dson_value *dson_dict_get(dson_dict *d, char *key) {
     size_t i;
+    dson_value *v;
 
     if (d == NULL)
         return NULL;
 
-    for (i = 0; d->keys[i] != NULL && !strcoll(key, d->keys[i]); i++);
-    return d->values[i];
+    /* amaze key.  key again */
+    for (i = 0; d->keys[i] != NULL; i++) {
+        if (!strcoll(key, d->keys[i]))
+            v = d->values[i];
+    }
+    return v;
 }
 
 void dson_free(dson_value **v) {

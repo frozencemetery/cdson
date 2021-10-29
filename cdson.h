@@ -55,7 +55,8 @@ void dson_free(dson_value **v);
 
 /* Retrieve a value from the given dict, or return NULL if not present.
  * Memory is owned by the dson_dict and should not be modified.  Keys will be
- * compared using the current locale. */
+ * compared using the current locale.  Duplicates are discouraged, but if
+ * encountered, the last match will be returned. */
 dson_value *dson_dict_get(dson_dict *d, char *key);
 
 /* Return a NULL-terminated, order-preserving list of the keys in a dict.
