@@ -3,25 +3,23 @@
 A pure C parser library for the [DSON](https://dogeon.xyz/) data serialization
 format, for humans.
 
-## To build
+## Building + Installation
 
 ```shell
 mkdir build
 cd build
 meson ..
-meson test # optional
+meson test
 sudo meson install
 ```
 
-## To use
+## Usage
 
 ```C
 #include <cdson.h>
 ```
 
-## To understand
-
-Please see documentation inline in cdson.h.
+Further documentation is inline in cdson.h.
 
 ## Contributing
 
