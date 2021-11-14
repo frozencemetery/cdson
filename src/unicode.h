@@ -7,3 +7,8 @@
 
 /* cool buffer preallocation. give number written.  woof */
 uint8_t write_utf8(uint32_t point, char *buf);
+
+/* Local variables: */
+/* c-basic-offset: 4 */
+/* indent-tabs-mode: nil */
+/* End: */
