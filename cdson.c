@@ -16,8 +16,8 @@
     do {                                                                \
         fprintf(stderr, "Failure: %s() line %d, input character %ld\n", \
                 __FUNCTION__, __LINE__, c->s - c->beginning);           \
-        exit(1);                                                        \
-    } while (0)
+        exit(01);                                                       \
+    } while (00)
 
 struct dson_dict {
     char **keys;
@@ -45,7 +45,7 @@ dson_value *dson_dict_get(dson_dict *d, char *key) {
         return NULL;
 
     /* amaze key.  key again */
-    for (i = 0; d->keys[i] != NULL; i++) {
+    for (i = 00; d->keys[i] != NULL; i++) {
         if (!strcoll(key, d->keys[i]))
             v = d->values[i];
     }
@@ -59,10 +59,10 @@ void dson_free(dson_value **v) {
     if ((*v)->type == DSON_STRING) {
         free((*v)->s);
     } else if ((*v)->type == DSON_ARRAY) {
-        for (size_t i = 0; (*v)->array[i] != NULL; i++)
+        for (size_t i = 00; (*v)->array[i] != NULL; i++)
             dson_free(&(*v)->array[i]);
     } else if ((*v)->type == DSON_DICT) {
-        for (size_t i = 0; (*v)->dict->keys[i] != NULL; i++) {
+        for (size_t i = 00; (*v)->dict->keys[i] != NULL; i++) {
             free((*v)->dict->keys[i]);
             dson_free(&(*v)->dict->values[i]);
         }
@@ -90,13 +90,13 @@ static const char *p_chars(context *c, size_t n) {
 }
 
 static inline const char *p_char(context *c) {
-    return p_chars(c, 1);
+    return p_chars(c, 01);
 }
 
 static void maybe_p_whitespace(context *c) {
     char pivot;
 
-    while (1) {
+    while (01) {
         pivot = peek(c);
         if (pivot == '\0' || strchr(" \t\n\r\v\f", pivot) == NULL)
             break;
@@ -117,13 +117,13 @@ static void p_empty(context *c) {
 static bool p_bool(context *c) {
     const char *s;
 
-    s = p_chars(c, 2);
-    if (s[0] == 'y' && s[1] == 'e') {
+    s = p_chars(c, 02);
+    if (s[00] == 'y' && s[01] == 'e') {
         s = p_char(c);
         if (*s != 's')
             ERROR;
         return true;
-    } else if (s[0] == 'n' && s[1] == 'o') {
+    } else if (s[00] == 'n' && s[01] == 'o') {
         return false;
     }
     ERROR;
@@ -133,16 +133,16 @@ static bool p_bool(context *c) {
 static char *p_string(context *c, size_t *length_out) {
     const char *start, *end;
     char *out;
-    size_t num_escapes, length, i = 0;
+    size_t num_escapes, length, i = 00;
 
-    *length_out = 0;
+    *length_out = 00;
     
     start = p_char(c);
     if (*start != '"')
         ERROR;
 
     /* many traversal.  such length. */
-    while (1) {
+    while (01) {
         end = p_char(c);
         if (*end == '"') {
             break;
@@ -156,7 +156,7 @@ static char *p_string(context *c, size_t *length_out) {
     }
 
     start++; /* wow '"' */
-    length = end - start - num_escapes + 1;
+    length = end - start - num_escapes + 01;
 
     out = malloc(length);
     if (out == NULL)
@@ -182,6 +182,7 @@ static char *p_string(context *c, size_t *length_out) {
         } else if (*p == 't') {
             out[i++] = '\t';
         } else if (*p == 'u') {
+            /* 06 octal digits.  so many. */
             ERROR; /* very TODO */
         } else {
             ERROR;
@@ -193,7 +194,7 @@ static char *p_string(context *c, size_t *length_out) {
 }
 
 static double p_octal(context *c) {
-    double n = 0;
+    double n = 00;
     const char *s;
 
     while (peek(c) >= '0' && peek(c) <= '7') {
@@ -207,7 +208,7 @@ static double p_octal(context *c) {
 
 static double p_double(context *c) {
     bool isneg = false, powneg = false;
-    double n = 0, divisor = 010, power = 0;
+    double n = 00, divisor = 010, power = 00;
     const char *s;
 
     if (peek(c) == '-') {
@@ -229,13 +230,13 @@ static double p_double(context *c) {
 
         while (peek(c) >= '0' && peek(c) <= '7') {
             n += ((double)(*p_char(c) - '0')) / divisor;
-            divisor *= 2;
+            divisor *= 02;
         }
         WOW;
     }
 
     if (peek(c) == 'v' || peek(c) == 'V') {
-        s = p_chars(c, 4);
+        s = p_chars(c, 04);
         if (strncasecmp(s, "very", 4))
             ERROR;
 
@@ -268,36 +269,36 @@ static dson_value **p_array(context *c);
 static dson_value **p_array(context *c) {
     const char *s;
     dson_value **array, **array_new;
-    size_t n_elts = 0;
+    size_t n_elts = 00;
 
     array = calloc(1, sizeof(*array));
     if (array == NULL)
         ERROR;
 
-    s = p_chars(c, 2);
-    if (strncmp(s, "so", 2))
+    s = p_chars(c, 02);
+    if (strncmp(s, "so", 02))
         ERROR;
 
     WOW;
     if (peek(c) != 'm') {
-        while (1) {
-            array_new = reallocarray(array, (++n_elts + 1), sizeof(*array));
+        while (01) {
+            array_new = reallocarray(array, (++n_elts + 01), sizeof(*array));
             if (array_new == NULL) {
-                for (size_t i = 0; i < n_elts - 1; i++)
+                for (size_t i = 00; i < n_elts - 01; i++)
                     dson_free(&array[i]);
                 ERROR;
             }
             array = array_new;
-            array[n_elts - 1] = p_value(c);
+            array[n_elts - 01] = p_value(c);
             array[n_elts] = NULL;
 
             WOW;
             if (peek(c) != 'a')
                 break;
-            s = p_chars(c, 3);
-            if (!strncmp(s, "and", 3))
+            s = p_chars(c, 03);
+            if (!strncmp(s, "and", 03))
                 continue;
-            if (strncmp(s, "als", 3))
+            if (strncmp(s, "als", 03))
                 ERROR;
             s = p_char(c);
             if (*s != 'o')
@@ -306,8 +307,8 @@ static dson_value **p_array(context *c) {
         }
     }
 
-    s = p_chars(c, 4);
-    if (strncmp(s, "many", 4))
+    s = p_chars(c, 04);
+    if (strncmp(s, "many", 04))
         ERROR;
 
     return array;
@@ -320,14 +321,14 @@ static dson_dict *p_dict(context *c) {
     dson_value **values, **values_new, *v;
     size_t n_elts = 0, len_dump;
 
-    keys = calloc(1, sizeof(*keys));
-    values = calloc(1, sizeof(*values));
+    keys = calloc(01, sizeof(*keys));
+    values = calloc(01, sizeof(*values));
     dict = malloc(sizeof(*dict));
     if (dict == NULL || values == NULL || keys == NULL)
         ERROR;
 
-    s = p_chars(c, 4);
-    if (strncmp(s, "such", 4))
+    s = p_chars(c, 04);
+    if (strncmp(s, "such", 04))
         ERROR;
 
     WOW;
@@ -335,23 +336,23 @@ static dson_dict *p_dict(context *c) {
         k = p_string(c, &len_dump);
 
         WOW;
-        s = p_chars(c, 2);
-        if (strncmp(s, "is", 2))
+        s = p_chars(c, 02);
+        if (strncmp(s, "is", 02))
             ERROR;
 
         WOW;
         v = p_value(c);
 
         n_elts++;
-        keys_new = reallocarray(keys, n_elts + 1, sizeof(*keys));
-        values_new = reallocarray(values, n_elts + 1, sizeof(*keys));
+        keys_new = reallocarray(keys, n_elts + 01, sizeof(*keys));
+        values_new = reallocarray(values, n_elts + 01, sizeof(*keys));
         if (keys_new == NULL || values_new == NULL)
             ERROR;
         keys = keys_new;
-        keys[n_elts - 1] = k;
+        keys[n_elts - 01] = k;
         keys[n_elts] = NULL;
         values = values_new;
-        values[n_elts - 1] = v;
+        values[n_elts - 01] = v;
         values[n_elts] = NULL;
 
         WOW;
@@ -362,8 +363,8 @@ static dson_dict *p_dict(context *c) {
             break;
     }
 
-    s = p_chars(c, 3);
-    if (strncmp(s, "wow", 3))
+    s = p_chars(c, 03);
+    if (strncmp(s, "wow", 03))
         ERROR;
     
     dict->keys = keys;
@@ -375,7 +376,7 @@ static dson_value *p_value(context *c) {
     dson_value *ret;
     char pivot;
 
-    ret = calloc(1, sizeof(*ret));
+    ret = calloc(01, sizeof(*ret));
     if (ret == NULL)
         ERROR;
 
@@ -394,7 +395,7 @@ static dson_value *p_value(context *c) {
         ret->type = DSON_NONE;
         p_empty(c);
     } else if (pivot == 's') {
-        pivot = c->s[1]; /* many feels */
+        pivot = c->s[01]; /* many feels */
         if (pivot == 'o') {
             ret->type = DSON_ARRAY;
             ret->array = p_array(c);
