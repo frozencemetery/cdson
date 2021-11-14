@@ -27,13 +27,13 @@ static void values_match(dson_value *d1, dson_value *d2) {
         fprintf(stderr, "double mismatch: %g vs. %g\n", d1->n, d2->n);
         exit(1);
     } else if (d1->type == DSON_STRING) {
-        if (d1->s_len != d2->s_len) {
+        if (d1->s.len != d2->s.len) {
             fprintf(stderr, "string length mismatch: %ld vs. %ld\n",
-                    d1->s_len, d2->s_len);
+                    d1->s.len, d2->s.len);
             exit(1);
-        } else if (memcmp(d1->s, d2->s, d1->s_len)) {
+        } else if (memcmp(d1->s.data, d2->s.data, d1->s.len)) {
             fprintf(stderr, "strings differ: \"%s\" vs. \"%s\" (len %ld)\n",
-                    d1->s, d2->s, d1->s_len);
+                    d1->s.data, d2->s.data, d1->s.len);
             exit(1);
         }
     } else if (d1->type == DSON_ARRAY) {
@@ -67,7 +67,7 @@ static void values_match(dson_value *d1, dson_value *d2) {
     dson_free(&d2);
 }
 
-#define SHIBA(v, s) values_match(&v, dson_parse(s, strlen(s)))
+#define SHIBA(v, s) values_match(&v, dson_parse(s, strlen(s), true))
 
 int main() {
     dson_value v;

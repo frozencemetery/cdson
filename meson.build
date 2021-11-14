@@ -10,7 +10,8 @@ cc = meson.get_compiler('c')
 m_dep = cc.find_library('m', required: false)
 deps = [m_dep]
 
-libcdson = library('libcdson', 'src/cdson.c', 'cdson.h',
+libcdson = library('libcdson', 'cdson.h', 'src/cdson.c',
+                   'src/unicode.h', 'src/unicode.c',
                    dependencies: deps,
                    install: true)
 

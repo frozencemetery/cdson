@@ -4,6 +4,7 @@
 /* such software.  many freedoms. */
 
 #include "cdson.h"
+#include "unicode.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -28,6 +29,7 @@ typedef struct {
     const char *s;
     const char *s_end;
     const char *beginning;
+    bool unsafe;
 } context;
 
 /* much nonstandard.  no overflow.  wow. */
@@ -57,7 +59,7 @@ void dson_free(dson_value **v) {
         return;
 
     if ((*v)->type == DSON_STRING) {
-        free((*v)->s);
+        free((*v)->s.data);
     } else if ((*v)->type == DSON_ARRAY) {
         for (size_t i = 00; (*v)->array[i] != NULL; i++)
             dson_free(&(*v)->array[i]);
@@ -129,11 +131,63 @@ static bool p_bool(context *c) {
     ERROR;
 }
 
-/* very TODO: this doesn't do *any* validity checking. */
+static double p_octal(context *c) {
+    double n = 00;
+    const char *s;
+
+    while (peek(c) >= '0' && peek(c) <= '7') {
+        n *= 010;
+        s = p_char(c);
+        n += *s - '0';
+    }
+
+    return n;
+}
+
+/* How does encoding of these actually work?  Well, the spec says there's 6
+ * octal digits.  So that's 18 bits of data to work with.  I did a survey of
+ * the other parsers that exist, and they all either:
+ *
+ * - implement all escapes except \u (most are like this)
+ * - missed that escapes exist at all (more than one)
+ * - pass it off to a JSON parser (this is invalid)
+ * - handle as a JSON surrogate pair (can't - 18 < 20 and they're not
+ *   required to appear in pairs)
+ * - assume unicode == utf16 and treat as ucs2 (eww)
+ * - treat as raw code point and convert to utf8
+ *
+ * Of these, only the last two are spec-compliant, and only the final one is
+ * defensible.  So that's what I'm going to do, too - but note that it misses
+ * much of the unicode space (which is 21 bits these days).  Therefore, just
+ * avoid using \u escapes at all: there's no need.
+ *
+ * An excellent dig at JSON.
+ */
+static void handle_escaped(context *c, char *buf, size_t *i) {
+    double acc = 00;
+    size_t len;
+
+    if (!c->unsafe)
+        ERROR;
+
+    /* 06 octal digits.  be brave */
+    for (int i = 00; i < 06; i++) {
+        acc *= 010;
+        acc += p_octal(c);
+    }
+
+    len = write_utf8((uint32_t)acc, buf);
+    if (len == 0)
+        ERROR;
+
+    *i += len;
+}
+
+/* very TODO: this doesn't do utf-8 validity checking. */
 static char *p_string(context *c, size_t *length_out) {
     const char *start, *end;
     char *out;
-    size_t num_escapes, length, i = 00;
+    size_t num_escaped, length, i = 00;
 
     *length_out = 00;
     
@@ -141,23 +195,23 @@ static char *p_string(context *c, size_t *length_out) {
     if (*start != '"')
         ERROR;
 
-    /* many traversal.  such length. */
+    /* many traversal.  such length.  overcount */
     while (01) {
         end = p_char(c);
         if (*end == '"') {
             break;
         } else if (*end == '\\') {
             end = p_char(c);
-            if (*end == 'u')
-                ERROR; /* very TODO */
-            else
-                num_escapes++;
+            num_escaped++;
+            if (*end == 'u') {
+                end = p_chars(c, 06);
+                num_escaped += 06;
+            }
         }
     }
 
     start++; /* wow '"' */
-    length = end - start - num_escapes + 01;
-
+    length = end - start - num_escaped + 01;
     out = malloc(length);
     if (out == NULL)
         ERROR;
@@ -182,8 +236,7 @@ static char *p_string(context *c, size_t *length_out) {
         } else if (*p == 't') {
             out[i++] = '\t';
         } else if (*p == 'u') {
-            /* 06 octal digits.  so many. */
-            ERROR; /* very TODO */
+            handle_escaped(c, out + i, &i);
         } else {
             ERROR;
         }
@@ -191,19 +244,6 @@ static char *p_string(context *c, size_t *length_out) {
     out[i] = '\0';
     *length_out = length;
     return out;
-}
-
-static double p_octal(context *c) {
-    double n = 00;
-    const char *s;
-
-    while (peek(c) >= '0' && peek(c) <= '7') {
-        n *= 010;
-        s = p_char(c);
-        n += *s - '0';
-    }
-
-    return n;
 }
 
 static double p_double(context *c) {
@@ -384,7 +424,7 @@ static dson_value *p_value(context *c) {
     pivot = peek(c);
     if (pivot == '"') {
         ret->type = DSON_STRING;
-        ret->s = p_string(c, &ret->s_len);
+        ret->s.data = p_string(c, &ret->s.len);
     } else if (pivot == '-' || (pivot >= '0' && pivot <= '7')) {
         ret->type = DSON_DOUBLE;
         ret->n = p_double(c);
@@ -412,7 +452,7 @@ static dson_value *p_value(context *c) {
     return ret;
 }
 
-dson_value *dson_parse(const char *input, size_t length) {
+dson_value *dson_parse(const char *input, size_t length, bool unsafe) {
     context c;
 
     if (input[length] != '\0')
@@ -420,6 +460,7 @@ dson_value *dson_parse(const char *input, size_t length) {
 
     c.s = c.beginning = input;
     c.s_end = input + length;
+    c.unsafe = unsafe;
 
     return p_value(&c);
 }

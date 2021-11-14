@@ -31,24 +31,36 @@ typedef uint8_t dson_type; /* Can't put enum in header file. */
 struct dson_dict;
 typedef struct dson_dict dson_dict;
 
+typedef struct dson_string {
+    /* Can be invalid UTF-8 and contain non-terminating NULs if unsafe
+     * is enabled in dson_parse(); otherwise, is a NUL-terminated
+     * UTF-8 string. */
+    char *data;
+    size_t len; /* Does not include terminating '\0', as in strlen(). */
+} dson_string;
+
 /* A parsed tree. */
 typedef struct dson_value {
     dson_type type;
     union {
         bool b;
         double n;
-        struct { /* It's technically possible to have NUL in s. */
-            char *s; /* Currently, can potentially be invalid UTF-8. */
-            size_t s_len;
-        };
+        dson_string s;
         struct dson_value **array;
         dson_dict *dict;
     };
 } dson_value;
 
 /* Parse DSON from a NUL-terminated utf-8 stream.  Length does not include the
- * trailing NUL.  Returns NULL on failure. */
-dson_value *dson_parse(const char *input, size_t length);
+ * trailing '\0'.  Returns NULL on failure.
+ *
+ * Per spec, DSON permits placing all unicode characters (except control
+ * characters) directly in strings, with a few optional backslash escapes
+ * supported.  If this is not enough for your purposes and you with to handle
+ * the arbitrary digit escaping in your strings as well, pass unsafe=true.  If
+ * you are unsure if you need this, you probably don't.  Be safe.
+ */
+dson_value *dson_parse(const char *input, size_t length, bool unsafe);
 
 /* Recursively free and NULL a DSON object. */
 void dson_free(dson_value **v);
@@ -56,7 +68,7 @@ void dson_free(dson_value **v);
 /* Retrieve a value from the given dict, or return NULL if not present.
  * Memory is owned by the dson_dict and should not be modified.  Keys will be
  * compared using the current locale.  Duplicates are discouraged, but if
- * encountered, the last match will be returned. */
+ * encountered, the last match will be returned.  key must be valid UTF-8. */
 dson_value *dson_dict_get(dson_dict *d, char *key);
 
 /* Return a NULL-terminated, order-preserving list of the keys in a dict.
