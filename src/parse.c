@@ -220,7 +220,7 @@ static char *p_string(context *c, size_t *length_out) {
         p++;
         if (*p == '"' || *p == '\\' || *p == '/') {
             out[i++] = *p;
-        } else if (*p == 'b') {
+        } else if (*p == 'b' && c->unsafe) {
             out[i++] = '\b';
         } else if (*p == 'f') {
             out[i++] = '\f';
