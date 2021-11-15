@@ -71,7 +71,7 @@ static inline void write_char(buf *b, char c) {
 }
 
 static void dump_none(buf *b) {
-    write_str(b, "none ");
+    write_str(b, "empty ");
 }
 
 static void dump_bool(buf *b, bool boo) {
