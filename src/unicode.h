@@ -3,10 +3,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 /* such software.  many freedoms. */
 
+#ifndef _CDSON_UNICODE_H
+#define _CDSON_UNICODE_H
+
 #include <stdint.h>
 
 /* cool buffer preallocation. give number written.  woof */
 uint8_t write_utf8(uint32_t point, char *buf);
+
+#endif /* _CDSON_UNICODE_H */
 
 /* Local variables: */
 /* c-basic-offset: 4 */
