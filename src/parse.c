@@ -20,11 +20,6 @@
         exit(01);                                                       \
     } while (00)
 
-struct dson_dict {
-    char **keys;
-    dson_value **values;
-};
-
 typedef struct {
     const char *s;
     const char *s_end;

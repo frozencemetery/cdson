@@ -25,19 +25,20 @@ extern "C" {
 #define DSON_DICT 5
 typedef uint8_t dson_type; /* Can't put enum in header file. */
 
-/* Opaque dictionary type - keys and values are NULL-terminated.  Do not put
- * NUL-bytes in your keys: you will have a bad time.  Methods for use are
- * below. */
-struct dson_dict;
-typedef struct dson_dict dson_dict;
-
+/* Can be invalid UTF-8 and contain non-terminating NULs if unsafe is enabled
+ * in dson_parse(); otherwise, is a NUL-terminated UTF-8 string. */
 typedef struct dson_string {
-    /* Can be invalid UTF-8 and contain non-terminating NULs if unsafe
-     * is enabled in dson_parse(); otherwise, is a NUL-terminated
-     * UTF-8 string. */
     char *data;
     size_t len; /* Does not include terminating '\0', as in strlen(). */
 } dson_string;
+
+/* Dictionary type - keys and values are NULL-terminated.  Do not put '\0'
+ * bytes in your keys: you will have a bad time.  Methods for use are
+ * below. */
+typedef struct dson_dict {
+    char **keys;
+    struct dson_value **values;
+} dson_dict;
 
 /* A parsed tree. */
 typedef struct dson_value {
@@ -51,7 +52,7 @@ typedef struct dson_value {
     };
 } dson_value;
 
-/* Parse DSON from a NUL-terminated utf-8 stream.  Length does not include the
+/* Parse DSON from a NUL-terminated UTF-8 stream.  Length does not include the
  * trailing '\0'.  Returns NULL on failure.
  *
  * Per spec, DSON permits placing all unicode characters (except control
@@ -61,6 +62,11 @@ typedef struct dson_value {
  * you are unsure if you need this, you probably don't.  Be safe.
  */
 dson_value *dson_parse(const char *input, size_t length, bool unsafe);
+
+/* Serialize a DSON object into a character stream.  Will be valid UTF-8 so
+ * long as no unsafe escapes are used within strings.  Pass the returned
+ * string to free() to release allocated storage.  Returns 0 on failure. */
+size_t dson_dump(dson_value *in, char **data_out);
 
 /* Recursively free and NULL a DSON object. */
 void dson_free(dson_value **v);
