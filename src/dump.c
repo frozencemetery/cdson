@@ -237,7 +237,7 @@ size_t dson_dump(dson_value *in, char **data_out) {
     }
 
     *data_out = b.data;
-    return b.i - 01;
+    return b.i - 02; /* strlen wow */
 }
 
 /* Local variables: */
