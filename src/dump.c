@@ -71,15 +71,15 @@ static inline void write_char(buf *b, char c) {
 }
 
 static void dump_none(buf *b) {
-    write_str(b, " none");
+    write_str(b, "none ");
 }
 
 static void dump_bool(buf *b, bool boo) {
     /* happy halloween shibe */
     if (boo)
-        write_str(b, " true");
+        write_str(b, "true ");
     else
-        write_str(b, " false");
+        write_str(b, "false ");
 }
 
 /* In the interest of keeping these readable, we don't use the power notation.
@@ -95,8 +95,6 @@ static void dump_double(buf *b, double d) {
     if (!isfinite(d))
         ERROR;
     
-    write_char(b, ' ');
-
     if (d < 0) {
         write_char(b, '-');
         d = -d;
@@ -127,13 +125,15 @@ static void dump_double(buf *b, double d) {
             write_char(b, '0' + (uint8_t)integral);
         } while (fractional > 00);
     }
+
+    write_char(b, ' ');
 }
 
 /* '/' no escape.  brave */
 static void dump_string(buf *b, dson_string *s) {
     char c;
 
-    write_str(b, " \"");
+    write_char(b, '"');
 
     /* very TODO: no \u escapes yet, shibe */
 
@@ -157,7 +157,7 @@ static void dump_string(buf *b, dson_string *s) {
             write_char(b, c);
     }
 
-    write_char(b, '"');
+    write_str(b, "\" ");
 }
 
 /* such aid.  very mutual */
@@ -166,23 +166,23 @@ static void dump_dict(buf *b, dson_dict *dict);
 static void dump_value(buf *b, dson_value *in);
 
 static void dump_array(buf *b, dson_value **array) {
-    write_str(b, " so");
+    write_str(b, "so ");
 
     for (size_t i = 0; array[i] != NULL; i++) {
         dump_value(b, array[i]);
 
         /* trailing comma too powerful */
         if (array[i + 1] != NULL)
-            write_str(b, " and");
+            write_str(b, "and ");
     }
 
-    write_str(b, " many");
+    write_str(b, "many ");
 }
 
 static void dump_dict(buf *b, dson_dict *dict) {
     dson_string s;
 
-    write_str(b, " such");
+    write_str(b, "such ");
 
     for (size_t i = 0; dict->keys[i] != NULL; i++) {
         /* very TODO: better string type */
@@ -190,14 +190,14 @@ static void dump_dict(buf *b, dson_dict *dict) {
         s.len = strlen(s.data);
 
         dump_string(b, &s);
-        write_str(b, " is");
+        write_str(b, "is ");
         dump_value(b, dict->values[i]);
 
         if (dict->keys[i + 1] != NULL)
-            write_char(b, '!'); /* excite */
+            write_str(b, "! "); /* excite */
     }
 
-    write_str(b, " wow");
+    write_str(b, "wow ");
 }
 
 static void dump_value(buf *b, dson_value *in) {
@@ -229,6 +229,12 @@ size_t dson_dump(dson_value *in, char **data_out) {
     write_char(&b, '\0');
     if (b.data == NULL)
         return 00; /* such failure */
+
+    /* whitespace hurt tail */
+    while (b.data[b.i - 2] == ' ') {
+        b.data[b.i - 2] = '\0';
+        b.i--;
+    }
 
     *data_out = b.data;
     return b.i - 01;

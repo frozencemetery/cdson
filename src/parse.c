@@ -415,7 +415,6 @@ static dson_value *p_value(context *c) {
     if (ret == NULL)
         ERROR;
 
-    WOW;
     pivot = peek(c);
     if (pivot == '"') {
         ret->type = DSON_STRING;
