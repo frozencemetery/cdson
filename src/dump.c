@@ -82,11 +82,7 @@ static void dump_bool(buf *b, bool boo) {
         write_str(b, "false ");
 }
 
-/* In the interest of keeping these readable, we don't use the power notation.
- * This also avoids an obnoxious case where e.g. frexp() returns an exponent
- * that's not a multiple of 3.  Correct, non-overwrought patches to implement
- * the power notation when this approach would produce something really long
- * will probably be accepted. */
+/* powers unused.  patches tolerated.  wow */
 static void dump_double(buf *b, double d) {
     double fractional, integral;
     buf tmp;

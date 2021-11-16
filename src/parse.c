@@ -139,25 +139,7 @@ static double p_octal(context *c) {
     return n;
 }
 
-/* How does encoding of these actually work?  Well, the spec says there's 6
- * octal digits.  So that's 18 bits of data to work with.  I did a survey of
- * the other parsers that exist, and they all either:
- *
- * - implement all escapes except \u (most are like this)
- * - missed that escapes exist at all (more than one)
- * - pass it off to a JSON parser (this is invalid)
- * - handle as a JSON surrogate pair (can't - 18 < 20 and they're not
- *   required to appear in pairs)
- * - assume unicode == utf16 and treat as ucs2 (eww)
- * - treat as raw code point and convert to utf8
- *
- * Of these, only the last two are spec-compliant, and only the final one is
- * defensible.  So that's what I'm going to do, too - but note that it misses
- * much of the unicode space (which is 21 bits these days).  Therefore, just
- * avoid using \u escapes at all: there's no need.
- *
- * An excellent dig at JSON.
- */
+/* \u escapes do a frighten */
 static void handle_escaped(context *c, char *buf, size_t *i) {
     double acc = 00;
     size_t len;
