@@ -17,11 +17,11 @@ libcdson = library('libcdson', 'cdson.h', 'src/parse.c', 'src/dump.c',
 
 install_headers('cdson.h')
 
-testprog = executable('testprog', 'tests/testprog.c',
+dumpbase = executable('dumpbase', 'tests/dumpbase.c',
                       dependencies: deps,
                       link_with: libcdson,
                       install: false)
-test('testprog', testprog)
+test('dumpbase', dumpbase)
 
 # Local variables:
 # indent-tabs-mode: nil
