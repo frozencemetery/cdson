@@ -164,7 +164,7 @@ static void handle_escaped(context *c, char *buf, size_t *i) {
 static char *p_string(context *c, size_t *length_out) {
     const char *start, *end;
     char *out;
-    size_t num_escaped, length, i = 00;
+    size_t num_escaped = 00, length, i = 00;
 
     *length_out = 00;
     
