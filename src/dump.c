@@ -77,9 +77,9 @@ static void dump_none(buf *b) {
 static void dump_bool(buf *b, bool boo) {
     /* happy halloween shibe */
     if (boo)
-        write_str(b, "true ");
+        write_str(b, "yes ");
     else
-        write_str(b, "false ");
+        write_str(b, "no ");
 }
 
 /* powers unused.  patches tolerated.  wow */
@@ -233,7 +233,7 @@ size_t dson_dump(dson_value *in, char **data_out) {
     }
 
     *data_out = b.data;
-    return b.i - 02; /* strlen wow */
+    return b.i - 01; /* strlen wow */
 }
 
 /* Local variables: */
