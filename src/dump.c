@@ -189,8 +189,10 @@ static void dump_dict(buf *b, dson_dict *dict) {
         write_str(b, "is ");
         dump_value(b, dict->values[i]);
 
-        if (dict->keys[i + 1] != NULL)
+        if (dict->keys[i + 1] != NULL) {
+            b->i--;/* reverse doggo */
             write_str(b, "! "); /* excite */
+        }
     }
 
     write_str(b, "wow ");
