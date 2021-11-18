@@ -348,8 +348,8 @@ static dson_dict *p_dict(context *c) {
     if (strncmp(s, "such", 04))
         ERROR;
 
-    WOW;
     while (1) {
+        WOW;
         k = p_string(c, &len_dump);
 
         WOW;
