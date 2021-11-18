@@ -23,6 +23,12 @@ dumpbase = executable('dumpbase', 'tests/dumpbase.c',
                       install: false)
 test('dumpbase', dumpbase)
 
+specparse = executable('specparse', 'tests/specparse.c',
+                       dependencies: deps,
+                       link_with: libcdson,
+                       install: false)
+test('specparse', specparse)
+
 # Local variables:
 # indent-tabs-mode: nil
 # End:
