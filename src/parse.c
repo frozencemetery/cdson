@@ -313,8 +313,10 @@ static dson_value **p_array(context *c) {
             if (peek(c) != 'a')
                 break;
             s = p_chars(c, 03);
-            if (!strncmp(s, "and", 03))
+            if (!strncmp(s, "and", 03)) {
+                WOW;
                 continue;
+            }
             if (strncmp(s, "als", 03))
                 ERROR;
             s = p_char(c);
