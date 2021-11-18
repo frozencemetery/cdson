@@ -103,7 +103,7 @@ static void dump_double(buf *b, double d) {
         /* reversed.  excite */
         init_buf(&tmp);
         do {
-            write_char(&tmp, '0' + (uint8_t)remainder(integral, 010));
+            write_char(&tmp, '0' + (uint8_t)fmod(integral, 010));
             integral = floor(integral / 010);
         } while (integral > (double)00);
 
