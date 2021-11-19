@@ -3,13 +3,14 @@
 A pure C parser library for the [DSON](https://dogeon.xyz/) data serialization
 format, for humans.
 
-## Building + Installation
+## Building, Installation, and Testing
 
 ```shell
 mkdir build
 cd build
 meson ..
-meson test
+ninja
+meson test # optional
 sudo meson install
 ```
 
@@ -23,8 +24,7 @@ Further documentation is inline in cdson.h.
 
 ## Contributing
 
-PRs welcome.  This project uses [DCO](https://developercertificate.org/),
-which is attested by adding Signed-off-by lines to commits (`git commit -s`).
+PRs welcome!  Test suite must pass, and more tests are welcome.
 
 ## Dogs
 
