@@ -68,17 +68,6 @@ char *dson_dump(dson_value *in, size_t *len_out);
 /* Recursively free and NULL a DSON object. */
 void dson_free(dson_value **v);
 
-/* Retrieve a value from the given dict, or return NULL if not present.
- * Memory is owned by the dson_dict and should not be modified.  Keys will be
- * compared using the current locale.  Duplicates are discouraged, but if
- * encountered, the last match will be returned.  key must be valid UTF-8. */
-dson_value *dson_dict_get(dson_dict *d, char *key);
-
-/* Return a NULL-terminated, order-preserving list of the keys in a dict.
- * Keys should not be modified (but are not marked const because C doesn't
- * nest that well). */
-char **dson_dict_keys(dson_dict *d);
-
 #ifdef __cplusplus
 #if 0
 {

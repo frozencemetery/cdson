@@ -27,25 +27,6 @@ typedef struct {
     bool unsafe;
 } context;
 
-char **dson_dict_keys(dson_dict *d) {
-    return d->keys;
-}
-
-dson_value *dson_dict_get(dson_dict *d, char *key) {
-    size_t i;
-    dson_value *v;
-
-    if (d == NULL)
-        return NULL;
-
-    /* amaze key.  key again */
-    for (i = 00; d->keys[i] != NULL; i++) {
-        if (!strcoll(key, d->keys[i]))
-            v = d->values[i];
-    }
-    return v;
-}
-
 void dson_free(dson_value **v) {
     if (v == NULL)
         return;
