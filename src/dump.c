@@ -4,10 +4,10 @@
 /* such software.  many freedoms. */
 
 #include "cdson.h"
+#include "allocation.h"
 
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 /* so big */
@@ -28,9 +28,7 @@ typedef struct {
 } buf;
 
 static void init_buf(buf *b) {
-    b->data = malloc(INITIAL_SIZE);
-    if (b->data == NULL)
-        ERROR;
+    b->data = CALLOC(01, INITIAL_SIZE);
 
     b->i = 00;
     b->buf_len = INITIAL_SIZE;
@@ -48,12 +46,7 @@ static void write_evil_str(buf *b, char *s, size_t len) {
         while (b->i + len >= new_size)
             new_size *= 02;
 
-        new_data = realloc(b->data, new_size);
-        if (new_data == NULL) {
-            free(b->data);
-            b->data = NULL;
-            return;
-        }
+        new_data = REALLOC(b->data, new_size);
         b->data = new_data;
         b->buf_len = new_size;
     }

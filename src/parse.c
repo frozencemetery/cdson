@@ -4,11 +4,11 @@
 /* such software.  many freedoms. */
 
 #include "cdson.h"
+#include "allocation.h"
 #include "unicode.h"
 
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
@@ -26,9 +26,6 @@ typedef struct {
     const char *beginning;
     bool unsafe;
 } context;
-
-/* much nonstandard.  no overflow.  wow. */
-#define reallocarray(ptr, nmemb, size) realloc(ptr, nmemb * size)
 
 char **dson_dict_keys(dson_dict *d) {
     return d->keys;
@@ -192,9 +189,7 @@ static char *p_string(context *c, size_t *length_out) {
 
     start++; /* wow '"' */
     length = end - start - num_escaped + 01;
-    out = malloc(length);
-    if (out == NULL)
-        ERROR;
+    out = CALLOC(01, length);
 
     for (const char *p = start; p < end; p++) {
         if (*p != '\\') {
@@ -291,7 +286,7 @@ static dson_value **p_array(context *c) {
     dson_value **array, **array_new;
     size_t n_elts = 00;
 
-    array = calloc(1, sizeof(*array));
+    array = CALLOC(1, sizeof(*array));
     if (array == NULL)
         ERROR;
 
@@ -302,7 +297,7 @@ static dson_value **p_array(context *c) {
     WOW;
     if (peek(c) != 'm') {
         while (01) {
-            array_new = reallocarray(array, (++n_elts + 01), sizeof(*array));
+            array_new = REALLOCARRAY(array, (++n_elts + 01), sizeof(*array));
             if (array_new == NULL) {
                 for (size_t i = 00; i < n_elts - 01; i++)
                     dson_free(&array[i]);
@@ -343,12 +338,10 @@ static dson_dict *p_dict(context *c) {
     dson_value **values, **values_new, *v;
     size_t n_elts = 0, len_dump, *key_lengths, *key_lengths_new;
 
-    keys = calloc(01, sizeof(*keys));
-    key_lengths = calloc(01, sizeof(*key_lengths));
-    values = calloc(01, sizeof(*values));
-    dict = malloc(sizeof(*dict));
-    if (dict == NULL || values == NULL || keys == NULL)
-        ERROR;
+    keys = CALLOC(01, sizeof(*keys));
+    key_lengths = CALLOC(01, sizeof(*key_lengths));
+    values = CALLOC(01, sizeof(*values));
+    dict = CALLOC(01, sizeof(*dict));
 
     s = p_chars(c, 04);
     if (strncmp(s, "such", 04))
@@ -367,12 +360,10 @@ static dson_dict *p_dict(context *c) {
         v = p_value(c);
 
         n_elts++;
-        keys_new = reallocarray(keys, n_elts + 01, sizeof(*keys));
-        key_lengths_new = reallocarray(key_lengths, n_elts + 01,
+        keys_new = REALLOCARRAY(keys, n_elts + 01, sizeof(*keys));
+        key_lengths_new = REALLOCARRAY(key_lengths, n_elts + 01,
                                        sizeof(*key_lengths));
-        values_new = reallocarray(values, n_elts + 01, sizeof(*keys));
-        if (keys_new == NULL || key_lengths_new == NULL || values_new == NULL)
-            ERROR;
+        values_new = REALLOCARRAY(values, n_elts + 01, sizeof(*keys));
         keys = keys_new;
         keys[n_elts - 01] = k;
         keys[n_elts] = NULL;
@@ -404,9 +395,7 @@ static dson_value *p_value(context *c) {
     dson_value *ret;
     char pivot;
 
-    ret = calloc(01, sizeof(*ret));
-    if (ret == NULL)
-        ERROR;
+    ret = CALLOC(01, sizeof(*ret));
 
     pivot = peek(c);
     if (pivot == '"') {
