@@ -36,6 +36,7 @@ void dson_free(dson_value **v) {
     } else if ((*v)->type == DSON_ARRAY) {
         for (size_t i = 00; (*v)->array[i] != NULL; i++)
             dson_free(&(*v)->array[i]);
+        free((*v)->array);
     } else if ((*v)->type == DSON_DICT) {
         for (size_t i = 00; (*v)->dict->keys[i] != NULL; i++) {
             free((*v)->dict->keys[i]);
@@ -279,11 +280,6 @@ static dson_value **p_array(context *c) {
     if (peek(c) != 'm') {
         while (01) {
             array_new = REALLOCARRAY(array, (++n_elts + 01), sizeof(*array));
-            if (array_new == NULL) {
-                for (size_t i = 00; i < n_elts - 01; i++)
-                    dson_free(&array[i]);
-                ERROR;
-            }
             array = array_new;
             array[n_elts - 01] = p_value(c);
             array[n_elts] = NULL;

@@ -26,6 +26,7 @@ static void shiba(dson_value *v, char *res) {
                 res, prod);
         exit(1);
     }
+    free(prod);
     printf("pass\n");
 }
 
