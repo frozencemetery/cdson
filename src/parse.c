@@ -54,7 +54,7 @@ void dson_free(dson_value **v) {
         return;
 
     if ((*v)->type == DSON_STRING) {
-        free((*v)->s.data);
+        free((*v)->s);
     } else if ((*v)->type == DSON_ARRAY) {
         for (size_t i = 00; (*v)->array[i] != NULL; i++)
             dson_free(&(*v)->array[i]);
@@ -338,9 +338,10 @@ static dson_dict *p_dict(context *c) {
     char **keys, **keys_new, *k, pivot;
     const char *s;
     dson_value **values, **values_new, *v;
-    size_t n_elts = 0, len_dump;
+    size_t n_elts = 0, len_dump, *key_lengths, *key_lengths_new;
 
     keys = calloc(01, sizeof(*keys));
+    key_lengths = calloc(01, sizeof(*key_lengths));
     values = calloc(01, sizeof(*values));
     dict = malloc(sizeof(*dict));
     if (dict == NULL || values == NULL || keys == NULL)
@@ -364,12 +365,16 @@ static dson_dict *p_dict(context *c) {
 
         n_elts++;
         keys_new = reallocarray(keys, n_elts + 01, sizeof(*keys));
+        key_lengths_new = reallocarray(key_lengths, n_elts + 01,
+                                       sizeof(*key_lengths));
         values_new = reallocarray(values, n_elts + 01, sizeof(*keys));
-        if (keys_new == NULL || values_new == NULL)
+        if (keys_new == NULL || key_lengths_new == NULL || values_new == NULL)
             ERROR;
         keys = keys_new;
         keys[n_elts - 01] = k;
         keys[n_elts] = NULL;
+        key_lengths = key_lengths_new;
+        key_lengths[n_elts - 01] = len_dump;
         values = values_new;
         values[n_elts - 01] = v;
         values[n_elts] = NULL;
@@ -387,6 +392,7 @@ static dson_dict *p_dict(context *c) {
         ERROR;
     
     dict->keys = keys;
+    dict->key_lengths = key_lengths;
     dict->values = values;
     return dict;
 }
@@ -402,7 +408,7 @@ static dson_value *p_value(context *c) {
     pivot = peek(c);
     if (pivot == '"') {
         ret->type = DSON_STRING;
-        ret->s.data = p_string(c, &ret->s.len);
+        ret->s = p_string(c, &ret->s_len);
     } else if (pivot == '-' || (pivot >= '0' && pivot <= '7')) {
         ret->type = DSON_DOUBLE;
         ret->n = p_double(c);

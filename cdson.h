@@ -25,18 +25,12 @@ extern "C" {
 #define DSON_DICT 5
 typedef uint8_t dson_type; /* Can't put enum in header file. */
 
-/* Can be invalid UTF-8 and contain non-terminating NULs if unsafe is enabled
- * in dson_parse(); otherwise, is a NUL-terminated UTF-8 string. */
-typedef struct dson_string {
-    char *data;
-    size_t len; /* Does not include terminating '\0', as in strlen(). */
-} dson_string;
-
-/* Dictionary type - keys and values are NULL-terminated.  Do not put '\0'
- * bytes in your keys: you will have a bad time.  Methods for use are
- * below. */
+/* Dictionary type.  Arrays are NULL-terminated.  dson_dicts created by
+ * dson_parse() will be valid, \0-terminated UTF-8 unless unsafe=true was
+ * passed.  Lengths do not include terminating \0 (as in strlen). */
 typedef struct dson_dict {
     char **keys;
+    size_t *key_lengths;
     struct dson_value **values;
 } dson_dict;
 
@@ -46,7 +40,10 @@ typedef struct dson_value {
     union {
         bool b;
         double n;
-        dson_string s;
+        struct { /* string - valid, \0-terminated UTF-8 unless unsafe=true. */
+            char *s;
+            size_t s_len;
+        };
         struct dson_value **array;
         dson_dict *dict;
     };
@@ -66,7 +63,7 @@ dson_value *dson_parse(const char *input, size_t length, bool unsafe);
 /* Serialize a DSON object into a character stream.  Will be valid UTF-8 so
  * long as no unsafe escapes are used within strings.  Pass the returned
  * string to free() to release allocated storage.  Returns 0 on failure. */
-size_t dson_dump(dson_value *in, char **data_out);
+char *dson_dump(dson_value *in, size_t *len_out);
 
 /* Recursively free and NULL a DSON object. */
 void dson_free(dson_value **v);

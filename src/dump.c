@@ -126,31 +126,28 @@ static void dump_double(buf *b, double d) {
 }
 
 /* '/' no escape.  brave */
-static void dump_string(buf *b, dson_string *s) {
-    char c;
-
+static void dump_string(buf *b, char *s, size_t s_len) {
     write_char(b, '"');
 
     /* very TODO: no \u escapes yet, shibe */
 
-    for (size_t i = 0; i < s->len && s->data[i] != '\0'; i++) {
-        c = s->data[i];
-        if (c == '"')
+    for (size_t i = 0; i < s_len && s[i] != '\0'; i++) {
+        if (s[i] == '"')
             write_str(b, "\\\"");
-        else if (c == '\\')
+        else if (s[i] == '\\')
             write_str(b, "\\\\");
-        else if (c == '\b')
+        else if (s[i] == '\b')
             write_str(b, "\\b");
-        else if (c == '\f')
+        else if (s[i] == '\f')
             write_str(b, "\\f");
-        else if (c == '\n')
+        else if (s[i] == '\n')
             write_str(b, "\\n");
-        else if (c == '\r')
+        else if (s[i] == '\r')
             write_str(b, "\\r");
-        else if (c == '\t')
+        else if (s[i] == '\t')
             write_str(b, "\\t");
         else
-            write_char(b, c);
+            write_char(b, s[i]);
     }
 
     write_str(b, "\" ");
@@ -176,16 +173,10 @@ static void dump_array(buf *b, dson_value **array) {
 }
 
 static void dump_dict(buf *b, dson_dict *dict) {
-    dson_string s;
-
     write_str(b, "such ");
 
     for (size_t i = 0; dict->keys[i] != NULL; i++) {
-        /* very TODO: better string type */
-        s.data = dict->keys[i];
-        s.len = strlen(s.data);
-
-        dump_string(b, &s);
+        dump_string(b, dict->keys[i], dict->key_lengths[i]);
         write_str(b, "is ");
         dump_value(b, dict->values[i]);
 
@@ -206,7 +197,7 @@ static void dump_value(buf *b, dson_value *in) {
     else if (in->type == DSON_DOUBLE)
         dump_double(b, in->n);
     else if (in->type == DSON_STRING)
-        dump_string(b, &in->s);
+        dump_string(b, in->s, in->s_len);
     else if (in->type == DSON_ARRAY)
         dump_array(b, in->array);
     else if (in->type == DSON_DICT)
@@ -216,17 +207,17 @@ static void dump_value(buf *b, dson_value *in) {
 }
 
 /* private time.  very bag.  compost amaze */
-size_t dson_dump(dson_value *in, char **data_out) {
+char *dson_dump(dson_value *in, size_t *len_out) {
     buf b;
 
-    *data_out = NULL;
+    *len_out = 0;
 
     init_buf(&b);
 
     dump_value(&b, in);
     write_char(&b, '\0');
     if (b.data == NULL)
-        return 00; /* such failure */
+        return NULL; /* such failure */
 
     /* whitespace hurt tail */
     while (b.data[b.i - 2] == ' ') {
@@ -234,8 +225,8 @@ size_t dson_dump(dson_value *in, char **data_out) {
         b.i--;
     }
 
-    *data_out = b.data;
-    return b.i - 01; /* strlen wow */
+    *len_out = b.i - 01; /* strlen wow */
+    return b.data;
 }
 
 /* Local variables: */
