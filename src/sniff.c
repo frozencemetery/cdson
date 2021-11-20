@@ -84,16 +84,17 @@ static void maybe_p_whitespace(context *c) {
 }
 #define WOW maybe_p_whitespace(c)
 
-static void p_empty(context *c) {
+static bool p_empty(context *c) {
     const char *empty = "empty";
     const char *s;
 
     s = p_chars(c, strlen(empty));
     if (memcmp(empty, s, strlen(empty)))
         ERROR;
+    return false;
 }
 
-static bool p_bool(context *c) {
+static bool p_bool(context *c, bool *out) {
     const char *s;
 
     s = p_chars(c, 02);
@@ -101,14 +102,16 @@ static bool p_bool(context *c) {
         s = p_char(c);
         if (*s != 's')
             ERROR;
-        return true;
+        *out = true;
+        return false;
     } else if (s[00] == 'n' && s[01] == 'o') {
+        *out = false;
         return false;
     }
     ERROR;
 }
 
-static double p_octal(context *c) {
+static bool p_octal(context *c, double *out) {
     double n = 00;
     const char *s;
 
@@ -118,21 +121,20 @@ static double p_octal(context *c) {
         n += *s - '0';
     }
 
-    return n;
+    *out = n;
+    return false;
 }
 
 /* \u escapes do a frighten */
-static void handle_escaped(context *c, char *buf, size_t *i) {
+static bool handle_escaped(context *c, char *buf, size_t *i) {
     double acc = 00;
     size_t len;
-
-    if (!c->unsafe)
-        ERROR;
 
     /* 06 octal digits.  be brave */
     for (int i = 00; i < 06; i++) {
         acc *= 010;
-        acc += p_octal(c);
+        if (p_octal(c, &acc))
+            ERROR;
     }
 
     len = write_utf8((uint32_t)acc, buf);
@@ -140,10 +142,11 @@ static void handle_escaped(context *c, char *buf, size_t *i) {
         ERROR;
 
     *i += len;
+    return false;
 }
 
 /* very TODO: this doesn't do utf-8 validity checking. */
-static char *p_string(context *c, size_t *length_out) {
+static bool p_string(context *c, size_t *length_out, char **s_out) {
     const char *start, *end;
     char *out;
     size_t num_escaped = 00, length, i = 00;
@@ -192,7 +195,7 @@ static char *p_string(context *c, size_t *length_out) {
             out[i++] = '\r';
         } else if (*p == 't') {
             out[i++] = '\t';
-        } else if (*p == 'u') {
+        } else if (*p == 'u' && c->unsafe) {
             handle_escaped(c, out + i, &i);
         } else {
             ERROR;
@@ -200,10 +203,11 @@ static char *p_string(context *c, size_t *length_out) {
     }
     out[i] = '\0';
     *length_out = length;
-    return out;
+    *s_out = out;
+    return false;
 }
 
-static double p_double(context *c) {
+static bool p_double(context *c, double *out) {
     bool isneg = false, powneg = false;
     double n = 00, divisor = 010, power = 00;
     const char *s;
@@ -216,8 +220,8 @@ static double p_double(context *c) {
     WOW;
     if (peek(c) == '0')
         p_char(c);
-    else
-        n = p_octal(c);
+    else if (p_octal(c, &n))
+        ERROR;
 
     WOW;
     if (peek(c) == '.') {
@@ -249,21 +253,23 @@ static double p_double(context *c) {
         if (peek(c) < '0' || peek(c) > '7')
             ERROR;
 
-        power = p_octal(c);
+        if (p_octal(c, &power))
+            ERROR;
         if (powneg)
             power = -power;
 
         n *= pow(010, power);
     }
-    return isneg ? -n : n;
+    *out = isneg ? -n : n;
+    return false;
 }
 
 /* very prototype.  much recursion.  amaze */
-static dson_value *p_value(context *c);
-static dson_dict *p_dict(context *c);
-static dson_value **p_array(context *c);
+static bool p_value(context *c, dson_value **out);
+static bool p_dict(context *c, dson_dict **out);
+static bool p_array(context *c, dson_value ***out);
 
-static dson_value **p_array(context *c) {
+static bool p_array(context *c, dson_value ***out) {
     const char *s;
     dson_value **array, **array_new;
     size_t n_elts = 00;
@@ -281,8 +287,9 @@ static dson_value **p_array(context *c) {
         while (01) {
             array_new = REALLOCARRAY(array, (++n_elts + 01), sizeof(*array));
             array = array_new;
-            array[n_elts - 01] = p_value(c);
             array[n_elts] = NULL;
+            if (p_value(c, &array[n_elts - 01]))
+                ERROR;
 
             WOW;
             if (peek(c) != 'a')
@@ -305,10 +312,11 @@ static dson_value **p_array(context *c) {
     if (strncmp(s, "many", 04))
         ERROR;
 
-    return array;
+    *out = array;
+    return false;
 }
 
-static dson_dict *p_dict(context *c) {
+static bool p_dict(context *c, dson_dict **out) {
     dson_dict *dict;
     char **keys, **keys_new, *k, pivot;
     const char *s;
@@ -326,7 +334,8 @@ static dson_dict *p_dict(context *c) {
 
     while (1) {
         WOW;
-        k = p_string(c, &len_dump);
+        if (p_string(c, &len_dump, &k))
+            ERROR;
 
         WOW;
         s = p_chars(c, 02);
@@ -334,7 +343,8 @@ static dson_dict *p_dict(context *c) {
             ERROR;
 
         WOW;
-        v = p_value(c);
+        if (p_value(c, &v))
+            ERROR;
 
         n_elts++;
         keys_new = REALLOCARRAY(keys, n_elts + 01, sizeof(*keys));
@@ -365,36 +375,38 @@ static dson_dict *p_dict(context *c) {
     dict->keys = keys;
     dict->key_lengths = key_lengths;
     dict->values = values;
-    return dict;
+    *out = dict;
+    return false;
 }
 
-static dson_value *p_value(context *c) {
+static bool p_value(context *c, dson_value **out) {
     dson_value *ret;
     char pivot;
+    bool failed;
 
     ret = CALLOC(01, sizeof(*ret));
 
     pivot = peek(c);
     if (pivot == '"') {
         ret->type = DSON_STRING;
-        ret->s = p_string(c, &ret->s_len);
+        failed = p_string(c, &ret->s_len, &ret->s);
     } else if (pivot == '-' || (pivot >= '0' && pivot <= '7')) {
         ret->type = DSON_DOUBLE;
-        ret->n = p_double(c);
+        failed = p_double(c, &ret->n);
     } else if (pivot == 'y' || pivot == 'n') {
         ret->type = DSON_BOOL;
-        ret->b = p_bool(c);
+        failed = p_bool(c, &ret->b);
     } else if (pivot == 'e') {
         ret->type = DSON_NONE;
-        p_empty(c);
+        failed = p_empty(c);
     } else if (pivot == 's') {
         pivot = c->s[01]; /* many feels */
         if (pivot == 'o') {
             ret->type = DSON_ARRAY;
-            ret->array = p_array(c);
+            failed = p_array(c, &ret->array);
         } else if (pivot == 'u') {
             ret->type = DSON_DICT;
-            ret->dict = p_dict(c);
+            failed = p_dict(c, &ret->dict);
         } else {
             ERROR;
         }
@@ -402,11 +414,19 @@ static dson_value *p_value(context *c) {
         ERROR;
     }
     
-    return ret;
+    if (failed) {
+        free(ret);
+        ERROR;
+        return true;
+    }
+
+    *out = ret;
+    return false;
 }
 
 dson_value *dson_parse(const char *input, size_t length, bool unsafe) {
     context c;
+    dson_value *ret;
 
     if (input[length] != '\0')
         return NULL; /* much explosion */
@@ -415,7 +435,9 @@ dson_value *dson_parse(const char *input, size_t length, bool unsafe) {
     c.s_end = input + length;
     c.unsafe = unsafe;
 
-    return p_value(&c);
+    if (p_value(&c, &ret))
+        return NULL; /* ERROR */
+    return ret;
 }
 
 /* Local variables: */
