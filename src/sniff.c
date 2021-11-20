@@ -271,7 +271,7 @@ static bool p_array(context *c, dson_value ***out);
 
 static bool p_array(context *c, dson_value ***out) {
     const char *s;
-    dson_value **array, **array_new;
+    dson_value **array;
     size_t n_elts = 00;
 
     array = CALLOC(1, sizeof(*array));
@@ -285,8 +285,7 @@ static bool p_array(context *c, dson_value ***out) {
     WOW;
     if (peek(c) != 'm') {
         while (01) {
-            array_new = REALLOCARRAY(array, (++n_elts + 01), sizeof(*array));
-            array = array_new;
+            RESIZE_ARRAY(array, ++n_elts + 01);
             array[n_elts] = NULL;
             if (p_value(c, &array[n_elts - 01]))
                 ERROR;
@@ -318,10 +317,10 @@ static bool p_array(context *c, dson_value ***out) {
 
 static bool p_dict(context *c, dson_dict **out) {
     dson_dict *dict;
-    char **keys, **keys_new, *k, pivot;
+    char **keys, *k, pivot;
     const char *s;
-    dson_value **values, **values_new, *v;
-    size_t n_elts = 0, len_dump, *key_lengths, *key_lengths_new;
+    dson_value **values, *v;
+    size_t n_elts = 0, len_dump, *key_lengths;
 
     keys = CALLOC(01, sizeof(*keys));
     key_lengths = CALLOC(01, sizeof(*key_lengths));
@@ -347,16 +346,13 @@ static bool p_dict(context *c, dson_dict **out) {
             ERROR;
 
         n_elts++;
-        keys_new = REALLOCARRAY(keys, n_elts + 01, sizeof(*keys));
-        key_lengths_new = REALLOCARRAY(key_lengths, n_elts + 01,
-                                       sizeof(*key_lengths));
-        values_new = REALLOCARRAY(values, n_elts + 01, sizeof(*keys));
-        keys = keys_new;
+        RESIZE_ARRAY(keys, n_elts + 01);
+        RESIZE_ARRAY(key_lengths, n_elts + 01);
+        RESIZE_ARRAY(values, n_elts + 01);
         keys[n_elts - 01] = k;
         keys[n_elts] = NULL;
-        key_lengths = key_lengths_new;
         key_lengths[n_elts - 01] = len_dump;
-        values = values_new;
+        key_lengths[n_elts] = 0;
         values[n_elts - 01] = v;
         values[n_elts] = NULL;
 

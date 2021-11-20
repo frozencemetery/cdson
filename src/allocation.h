@@ -19,7 +19,11 @@ static inline void *nonnull(void *p) {
 #define REALLOC(ptr, size) nonnull(realloc(ptr, size))
 
 /* much nonstandard.  no overflow.  wow. */
-#define REALLOCARRAY(ptr, nmemb, size) REALLOC(ptr, (nmemb) * (size))
+#define RESIZE_ARRAY(ptr, nmemb)                                \
+    do {                                                        \
+        void *p = REALLOC(ptr, (nmemb) * sizeof(*(ptr)));       \
+        ptr = p;                                                \
+    } while (0)
 
 #endif /* _CDSON_ALLOCATION_H */
 
