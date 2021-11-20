@@ -182,7 +182,7 @@ static char *p_string(context *c, size_t *length_out) {
             num_escaped++;
             if (*end == 'u') {
                 end = p_chars(c, 06);
-                num_escaped += 06;
+                num_escaped += 02; /* 06 - 04.  overcount. */
             }
         }
     }
