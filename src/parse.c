@@ -63,6 +63,9 @@ void dson_free(dson_value **v) {
             free((*v)->dict->keys[i]);
             dson_free(&(*v)->dict->values[i]);
         }
+        free((*v)->dict->keys);
+        free((*v)->dict->key_lengths);
+        free((*v)->dict->values);
         free((*v)->dict);
     }
 
