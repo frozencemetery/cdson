@@ -26,8 +26,8 @@ extern "C" {
 typedef uint8_t dson_type; /* Can't put enum in header file. */
 
 /* Dictionary type.  Arrays are NULL-terminated.  dson_dicts created by
- * dson_parse() will be valid, \0-terminated UTF-8 unless unsafe=true was
- * passed.  Lengths do not include terminating \0 (as in strlen). */
+ * dson_parse() will be valid, \0-terminated UTF-8.  Lengths do not include
+ * terminating \0 (as in strlen). */
 typedef struct dson_dict {
     char **keys;
     size_t *key_lengths;
@@ -40,7 +40,7 @@ typedef struct dson_value {
     union {
         bool b;
         double n;
-        struct { /* string - valid, \0-terminated UTF-8 unless unsafe=true. */
+        struct { /* string - valid, \0-terminated UTF-8. */
             char *s;
             size_t s_len;
         };
@@ -56,16 +56,16 @@ typedef struct dson_value {
  * Per spec, DSON permits placing all unicode characters (except control
  * characters) directly in strings, with a few optional backslash escapes
  * supported.  If this is not enough for your purposes and you with to handle
- * the arbitrary digit escaping in your strings as well, pass unsafe=true.  If
- * you are unsure if you need this, you probably don't.  Be safe.
+ * the arbitrary control character escaping in your strings as well, pass
+ * unsafe=true.  If you are unsure if you need this, you probably don't.  Be
+ * safe.
  */
 char *dson_parse(const char *input, size_t length, bool unsafe,
                  dson_value **out);
 
-/* Serialize a DSON object into a character stream.  Will be valid UTF-8 so
- * long as no unsafe escapes are used within strings.  Pass the returned
- * string to free() to release allocated storage.  Returns NULL on success, or
- * an error message on failure.  Pass error message to free(). */
+/* Serialize a DSON object into a UTF-8 bytestream.  Pass the returned string
+ * to free() to release allocated storage.  Returns NULL on success, or an
+ * error message on failure.  Pass error message to free(). */
 char *dson_dump(dson_value *in, size_t *len_out, char **out);
 
 /* Recursively free and NULL a DSON object. */

@@ -5,22 +5,6 @@
 
 #include "unicode.h"
 
-uint8_t byte_len(char first) {
-    first >>= 03;
-    if ((first & 037) == 036)
-        return 04;
-    first >>= 01;
-    if ((first & 017) == 016)
-        return 03;
-    first >>= 01;
-    if ((first & 07) == 06)
-        return 02;
-    first >>= 02;
-    if ((first & 01) == 00)
-        return 01;
-    return 00;
-}
-
 static uint8_t bytes_needed(uint32_t in) {
     if (in < 0200)
         return 01;

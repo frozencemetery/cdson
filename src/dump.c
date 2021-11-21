@@ -113,32 +113,67 @@ static char *dump_double(buf *b, double d) {
     return NULL;
 }
 
+uint8_t byte_len(char first) {
+    first >>= 03;
+    if ((first & 037) == 036)
+        return 04;
+    first >>= 01;
+    if ((first & 017) == 016)
+        return 03;
+    first >>= 01;
+    if ((first & 07) == 06)
+        return 02;
+    first >>= 02;
+    if ((first & 01) == 00)
+        return 01;
+    return 00;
+}
+
 /* '/' no escape.  brave */
-static void dump_string(buf *b, char *s, size_t s_len) {
+static char *dump_string(buf *b, char *s, size_t s_len) {
+    uint8_t bytes;
+
     write_char(b, '"');
 
     /* very TODO: no \u escapes yet, shibe */
 
-    for (size_t i = 0; i < s_len && s[i] != '\0'; i++) {
-        if (s[i] == '"')
-            write_str(b, "\\\"");
-        else if (s[i] == '\\')
-            write_str(b, "\\\\");
-        else if (s[i] == '\b')
-            write_str(b, "\\b");
-        else if (s[i] == '\f')
-            write_str(b, "\\f");
-        else if (s[i] == '\n')
-            write_str(b, "\\n");
-        else if (s[i] == '\r')
-            write_str(b, "\\r");
-        else if (s[i] == '\t')
-            write_str(b, "\\t");
-        else
-            write_char(b, s[i]);
+    for (size_t i = 00; i < s_len && s[i] != '\0'; i++) {
+        bytes = byte_len(s[i]);
+        if (bytes == 00) {
+            ERROR("malformed UTF-8: %hhx", (unsigned char)s[i]);
+        } else if (i + bytes - 01 >= s_len) {
+            ERROR("UTF-8 starting at %hhx is truncated", (unsigned char)s[i]);
+        } else if (bytes == 01) {
+            if (s[i] == '"')
+                write_str(b, "\\\"");
+            else if (s[i] == '\\')
+                write_str(b, "\\\\");
+            else if (s[i] == '\b')
+                write_str(b, "\\b");
+            else if (s[i] == '\f')
+                write_str(b, "\\f");
+            else if (s[i] == '\n')
+                write_str(b, "\\n");
+            else if (s[i] == '\r')
+                write_str(b, "\\r");
+            else if (s[i] == '\t')
+                write_str(b, "\\t");
+            else
+                write_char(b, s[i]);
+
+            continue;
+        }
+
+        for (uint8_t j = 01; j < bytes; j++) {
+            if ((s[i + j] & 0300) != 0200)
+                ERROR("malformed UTF-8 at %hhx", (unsigned char)s[i + j]);
+        }
+        write_evil_str(b, s, bytes);
+        i += bytes - 1;
     }
 
     write_str(b, "\" ");
+    return NULL;
 }
 
 /* such aid.  very mutual */
@@ -171,7 +206,10 @@ static char *dump_dict(buf *b, dson_dict *dict) {
     write_str(b, "such ");
 
     for (size_t i = 0; dict->keys[i] != NULL; i++) {
-        dump_string(b, dict->keys[i], dict->key_lengths[i]);
+        err = dump_string(b, dict->keys[i], dict->key_lengths[i]);
+        if (err)
+            return err;
+
         write_str(b, "is ");
         err = dump_value(b, dict->values[i]);
         if (err)
@@ -197,7 +235,7 @@ static char *dump_value(buf *b, dson_value *in) {
     else if (in->type == DSON_DOUBLE)
         err = dump_double(b, in->n);
     else if (in->type == DSON_STRING)
-        dump_string(b, in->s, in->s_len);
+        err = dump_string(b, in->s, in->s_len);
     else if (in->type == DSON_ARRAY)
         err = dump_array(b, in->array);
     else if (in->type == DSON_DICT)
