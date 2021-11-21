@@ -50,7 +50,8 @@ typedef struct dson_value {
 } dson_value;
 
 /* Parse DSON from a NUL-terminated UTF-8 stream.  Length does not include the
- * trailing '\0'.  Returns NULL on failure.
+ * trailing '\0'.  Returns NULL success, or an error message on failure.  Pass
+ * error message to free().
  *
  * Per spec, DSON permits placing all unicode characters (except control
  * characters) directly in strings, with a few optional backslash escapes
@@ -58,12 +59,14 @@ typedef struct dson_value {
  * the arbitrary digit escaping in your strings as well, pass unsafe=true.  If
  * you are unsure if you need this, you probably don't.  Be safe.
  */
-dson_value *dson_parse(const char *input, size_t length, bool unsafe);
+char *dson_parse(const char *input, size_t length, bool unsafe,
+                 dson_value **out);
 
 /* Serialize a DSON object into a character stream.  Will be valid UTF-8 so
  * long as no unsafe escapes are used within strings.  Pass the returned
- * string to free() to release allocated storage.  Returns 0 on failure. */
-char *dson_dump(dson_value *in, size_t *len_out);
+ * string to free() to release allocated storage.  Returns NULL on success, or
+ * an error message on failure.  Pass error message to free(). */
+char *dson_dump(dson_value *in, size_t *len_out, char **out);
 
 /* Recursively free and NULL a DSON object. */
 void dson_free(dson_value **v);

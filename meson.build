@@ -10,6 +10,9 @@ cc = meson.get_compiler('c')
 m_dep = cc.find_library('m', required: false)
 deps = [m_dep]
 
+# vasprintf
+add_global_arguments('-D_GNU_SOURCE', language: 'c')
+
 libcdson = library('libcdson', 'cdson.h', 'src/dump.c', 'src/sniff.c',
                    'src/allocation.h', 'src/unicode.h', 'src/unicode.c',
                    dependencies: deps,
@@ -28,6 +31,12 @@ specparse = executable('specparse', 'tests/specparse.c',
                        link_with: libcdson,
                        install: false)
 test('specparse', specparse)
+
+errors = executable('errors', 'tests/errors.c',
+                    dependencies: deps,
+                    link_with: libcdson,
+                    install: false)
+test('errors', errors)
 
 # Local variables:
 # indent-tabs-mode: nil

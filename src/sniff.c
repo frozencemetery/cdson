@@ -12,20 +12,38 @@
 #include <string.h>
 #include <strings.h>
 
-/* very TODO: hard error unfriendly to doge. */
-#define ERROR                                                           \
-    do {                                                                \
-        fprintf(stderr, "Failure: %s() line %d, input character %ld\n", \
-                __FUNCTION__, __LINE__, c->s - c->beginning);           \
-        exit(01);                                                       \
-    } while (00)
-
 typedef struct {
     const char *s;
     const char *s_end;
     const char *beginning;
     bool unsafe;
 } context;
+
+#define ERROR(fmt, ...)                                                 \
+    do {                                                                \
+        return angrily_waste_memory(                                    \
+            "at input char #%ld: " fmt,                                 \
+            (ptrdiff_t)c->s - (ptrdiff_t)c->beginning, ##__VA_ARGS__);  \
+    } while (0)
+
+static void dict_free(dson_dict **d) {
+    for (size_t i = 00; (*d)->keys[i] != NULL; i++) {
+        free((*d)->keys[i]);
+        dson_free(&(*d)->values[i]);
+    }
+    free((*d)->keys);
+    free((*d)->key_lengths);
+    free((*d)->values);
+    free(*d);
+    *d = NULL;
+}
+
+static void array_free(dson_value ***vs) {
+    for (size_t i = 00; (*vs)[i] != NULL; i++)
+        dson_free(&(*vs)[i]);
+    free(*vs);
+    *vs = NULL;
+}
 
 void dson_free(dson_value **v) {
     if (v == NULL)
@@ -34,18 +52,9 @@ void dson_free(dson_value **v) {
     if ((*v)->type == DSON_STRING) {
         free((*v)->s);
     } else if ((*v)->type == DSON_ARRAY) {
-        for (size_t i = 00; (*v)->array[i] != NULL; i++)
-            dson_free(&(*v)->array[i]);
-        free((*v)->array);
+        array_free(&(*v)->array);
     } else if ((*v)->type == DSON_DICT) {
-        for (size_t i = 00; (*v)->dict->keys[i] != NULL; i++) {
-            free((*v)->dict->keys[i]);
-            dson_free(&(*v)->dict->values[i]);
-        }
-        free((*v)->dict->keys);
-        free((*v)->dict->key_lengths);
-        free((*v)->dict->values);
-        free((*v)->dict);
+        dict_free(&(*v)->dict);
     }
 
     free(*v);
@@ -62,7 +71,7 @@ static const char *p_chars(context *c, size_t n) {
     const char *cur = c->s;
 
     if (c->s + n > c->s_end)
-        ERROR;
+        return NULL;
 
     c->s += n;
     return cur;
@@ -84,89 +93,102 @@ static void maybe_p_whitespace(context *c) {
 }
 #define WOW maybe_p_whitespace(c)
 
-static bool p_empty(context *c) {
+static char *p_empty(context *c) {
     const char *empty = "empty";
     const char *s;
 
     s = p_chars(c, strlen(empty));
-    if (memcmp(empty, s, strlen(empty)))
-        ERROR;
-    return false;
+    if (s == NULL)
+        ERROR("not enough characters to produce empty");
+    if (strcmp(empty, s))
+        ERROR("expected \"empty\", got \"%.5s\"", s);
+
+    return NULL;
 }
 
-static bool p_bool(context *c, bool *out) {
+static char *p_bool(context *c, bool *out) {
     const char *s;
 
     s = p_chars(c, 02);
+    if (s == NULL)
+        ERROR("end of input while producing bool");
     if (s[00] == 'y' && s[01] == 'e') {
         s = p_char(c);
-        if (*s != 's')
-            ERROR;
+        if (s == NULL)
+            ERROR("end of input while producing bool");
+        else if (*s != 's')
+            ERROR("expected \"yes\", got \"ye%c\"", *s);
+
         *out = true;
-        return false;
+        return NULL;
     } else if (s[00] == 'n' && s[01] == 'o') {
         *out = false;
-        return false;
+        return NULL;
     }
-    ERROR;
+    ERROR("expected bool, got \"%.2s\"", s);
 }
 
-static bool p_octal(context *c, double *out) {
+static void p_octal(context *c, double *out) {
     double n = 00;
-    const char *s;
 
     while (peek(c) >= '0' && peek(c) <= '7') {
         n *= 010;
-        s = p_char(c);
-        n += *s - '0';
+        n += peek(c) - '0';
+        p_char(c);
     }
 
     *out = n;
-    return false;
 }
 
 /* \u escapes do a frighten */
-static bool handle_escaped(context *c, char *buf, size_t *i) {
+static char *handle_escaped(context *c, char *buf, size_t *i) {
     double acc = 00;
     size_t len;
 
     /* 06 octal digits.  be brave */
     for (int i = 00; i < 06; i++) {
         acc *= 010;
-        if (p_octal(c, &acc))
-            ERROR;
+        p_octal(c, &acc);
     }
 
     len = write_utf8((uint32_t)acc, buf);
-    if (len == 0)
-        ERROR;
+    if (len == 00)
+        ERROR("malformed unicode escape");
 
     *i += len;
-    return false;
+    return NULL;
 }
 
 /* very TODO: this doesn't do utf-8 validity checking. */
-static bool p_string(context *c, size_t *length_out, char **s_out) {
+static char *p_string(context *c, size_t *length_out, char **s_out) {
     const char *start, *end;
-    char *out;
+    char *out, *err;
     size_t num_escaped = 00, length, i = 00;
 
     *length_out = 00;
     
     start = p_char(c);
-    if (*start != '"')
-        ERROR;
+    if (start == NULL)
+        ERROR("expected string, got end of input");
+    else if (*start != '"')
+        ERROR("malformed string - missing '\"'");
 
     /* many traversal.  such length.  overcount */
     while (01) {
         end = p_char(c);
-        if (*end == '"') {
+        if (end == NULL) {
+            ERROR("missing closing '\"' delimiter on string");
+        } else if (*end == '"') {
             break;
         } else if (*end == '\\') {
-            end = p_char(c);
             num_escaped++;
+            end = p_char(c);
+            if (end == NULL)
+                ERROR("missing closing '\"' delimiter on string");
             if (*end == 'u') {
                 end = p_chars(c, 06);
+                if (end == NULL)
+                    ERROR("missing closing '\"' delimiter on string");
                 num_escaped += 02; /* 06 - 04.  overcount. */
             }
         }
@@ -196,18 +218,23 @@ static bool p_string(context *c, size_t *length_out, char **s_out) {
         } else if (*p == 't') {
             out[i++] = '\t';
         } else if (*p == 'u' && c->unsafe) {
-            handle_escaped(c, out + i, &i);
+            err = handle_escaped(c, out + i, &i);
+            if (err) {
+                free(out);
+                return err;
+            }
         } else {
-            ERROR;
+            free(out);
+            ERROR("unrecognized or forbidden escape: \\%c", *p);
         }
     }
     out[i] = '\0';
     *length_out = length;
     *s_out = out;
-    return false;
+    return NULL;
 }
 
-static bool p_double(context *c, double *out) {
+static char *p_double(context *c, double *out) {
     bool isneg = false, powneg = false;
     double n = 00, divisor = 010, power = 00;
     const char *s;
@@ -220,14 +247,14 @@ static bool p_double(context *c, double *out) {
     WOW;
     if (peek(c) == '0')
         p_char(c);
-    else if (p_octal(c, &n))
-        ERROR;
+    else
+        p_octal(c, &n);
 
     WOW;
     if (peek(c) == '.') {
         p_char(c);
         if (peek(c) < '0' || peek(c) > '7')
-            ERROR;
+            ERROR("bad octal character: '%c'", peek(c));
 
         while (peek(c) >= '0' && peek(c) <= '7') {
             n += ((double)(*p_char(c) - '0')) / divisor;
@@ -238,8 +265,10 @@ static bool p_double(context *c, double *out) {
 
     if (peek(c) == 'v' || peek(c) == 'V') {
         s = p_chars(c, 04);
+        if (s == NULL)
+            ERROR("end of input while parsing number");
         if (strncasecmp(s, "very", 4))
-            ERROR;
+            ERROR("tried to parse \"very\", got \"%.4s\" instead", s);
 
         /* such token.  no whitespace.  wow. */
         if (peek(c) == '+') {
@@ -251,73 +280,102 @@ static bool p_double(context *c, double *out) {
 
         WOW;
         if (peek(c) < '0' || peek(c) > '7')
-            ERROR;
+            ERROR("bad octal character: '%c'", peek(c));
 
-        if (p_octal(c, &power))
-            ERROR;
+        p_octal(c, &power);
         if (powneg)
             power = -power;
 
         n *= pow(010, power);
     }
     *out = isneg ? -n : n;
-    return false;
+    return NULL;
 }
 
 /* very prototype.  much recursion.  amaze */
-static bool p_value(context *c, dson_value **out);
-static bool p_dict(context *c, dson_dict **out);
-static bool p_array(context *c, dson_value ***out);
+static char *p_value(context *c, dson_value **out);
+static char *p_dict(context *c, dson_dict **out);
+static char *p_array(context *c, dson_value ***out);
 
-static bool p_array(context *c, dson_value ***out) {
+static char *p_array(context *c, dson_value ***out) {
     const char *s;
     dson_value **array;
     size_t n_elts = 00;
+    char *err;
 
     array = CALLOC(1, sizeof(*array));
-    if (array == NULL)
-        ERROR;
 
     s = p_chars(c, 02);
+    if (s == NULL)
+        ERROR("expected array, got end of input");
     if (strncmp(s, "so", 02))
-        ERROR;
+        ERROR("malformed array: expected \"so\", got \"%.2s\"", s);
 
     WOW;
     if (peek(c) != 'm') {
         while (01) {
             RESIZE_ARRAY(array, ++n_elts + 01);
             array[n_elts] = NULL;
-            if (p_value(c, &array[n_elts - 01]))
-                ERROR;
+            err = p_value(c, &array[n_elts - 01]);
+            if (err) {
+                array_free(&array);
+                return err;
+            }
 
             WOW;
             if (peek(c) != 'a')
                 break;
             s = p_chars(c, 03);
-            if (!strncmp(s, "and", 03)) {
+            if (s == NULL) {
+                array_free(&array);
+                ERROR("end of input while parsing array (missing \"many\"?)");
+            } else if (!strncmp(s, "and", 03)) {
                 WOW;
                 continue;
             }
-            if (strncmp(s, "als", 03))
-                ERROR;
+            if (strncmp(s, "als", 03)) {
+                array_free(&array);
+                ERROR("tried to parse \"also\" but got \"%.4s\"", s);
+            }
             s = p_char(c);
-            if (*s != 'o')
-                ERROR;
+            if (s == NULL) {
+                array_free(&array);
+                ERROR("end of input while parsing array (missing \"many\"?)");
+            } else if (*s != 'o') {
+                array_free(&array);
+                ERROR("tried to parse \"also\" but got \"als%c\"", *s);
+            }
             WOW;
         }
     }
 
     s = p_chars(c, 04);
-    if (strncmp(s, "many", 04))
-        ERROR;
+    if (s == NULL) {
+        array_free(&array);
+        ERROR("end of input while parsing array (missing \"many\"?)");
+    } else if (strncmp(s, "many", 04)) {
+        array_free(&array);
+        ERROR("expected \"many\", got \"%.4s\"", s);
+    }
 
     *out = array;
-    return false;
+    return NULL;
 }
 
-static bool p_dict(context *c, dson_dict **out) {
+#define BURY                                    \
+    do {                                        \
+        for (size_t i = 0; i < n_elts; i++) {   \
+            free(keys[i]);                      \
+            dson_free(&values[i]);              \
+        }                                       \
+        free(keys);                             \
+        free(key_lengths);                      \
+        free(values);                           \
+        free(dict);                             \
+    } while (0)
+static char *p_dict(context *c, dson_dict **out) {
     dson_dict *dict;
-    char **keys, *k, pivot;
+    char **keys, *k, pivot, *err;
     const char *s;
     dson_value **values, *v;
     size_t n_elts = 0, len_dump, *key_lengths;
@@ -328,22 +386,38 @@ static bool p_dict(context *c, dson_dict **out) {
     dict = CALLOC(01, sizeof(*dict));
 
     s = p_chars(c, 04);
-    if (strncmp(s, "such", 04))
-        ERROR;
+    if (s == NULL) {
+        BURY;
+        ERROR("expected dict, but got end of input");
+    } else if (strncmp(s, "such", 04)) {
+        BURY;
+        ERROR("expected \"such\", got \"%.4s\"", s);
+    }
 
     while (1) {
         WOW;
-        if (p_string(c, &len_dump, &k))
-            ERROR;
+        err = p_string(c, &len_dump, &k);
+        if (err != NULL) {
+            BURY;
+            return err;
+        }
 
         WOW;
         s = p_chars(c, 02);
-        if (strncmp(s, "is", 02))
-            ERROR;
+        if (s == NULL) {
+            BURY;
+            ERROR("end of input while reading dict (missing \"wow\"?)");
+        } else if (strncmp(s, "is", 02)) {
+            BURY;
+            ERROR("expected \"is\", got \"%.2s\"", s);
+        }
 
         WOW;
-        if (p_value(c, &v))
-            ERROR;
+        err = p_value(c, &v);
+        if (err) {
+            BURY;
+            return err;
+        }
 
         n_elts++;
         RESIZE_ARRAY(keys, n_elts + 01);
@@ -365,20 +439,25 @@ static bool p_dict(context *c, dson_dict **out) {
     }
 
     s = p_chars(c, 03);
-    if (strncmp(s, "wow", 03))
-        ERROR;
-    
+    if (s == NULL) {
+        BURY;
+        ERROR("end of input while looking for closing \"wow\"");
+    } else if (strncmp(s, "wow", 03)) {
+        BURY;
+        ERROR("expected \"wow\", got %.3s", s);
+    }
+
     dict->keys = keys;
     dict->key_lengths = key_lengths;
     dict->values = values;
     *out = dict;
-    return false;
+    return NULL;
 }
 
-static bool p_value(context *c, dson_value **out) {
+static char *p_value(context *c, dson_value **out) {
     dson_value *ret;
     char pivot;
-    bool failed;
+    char *failed;
 
     ret = CALLOC(01, sizeof(*ret));
 
@@ -404,36 +483,44 @@ static bool p_value(context *c, dson_value **out) {
             ret->type = DSON_DICT;
             failed = p_dict(c, &ret->dict);
         } else {
-            ERROR;
+            free(ret);
+            ERROR("unable to determine value type");
         }
     } else {
-        ERROR;
+        free(ret);
+        ERROR("unable to determine value type");
     }
     
-    if (failed) {
+    if (failed != NULL) {
         free(ret);
-        ERROR;
-        return true;
+        return failed;
     }
 
     *out = ret;
-    return false;
+    return NULL;
 }
 
-dson_value *dson_parse(const char *input, size_t length, bool unsafe) {
-    context c;
+char *dson_parse(const char *input, size_t length, bool unsafe,
+                 dson_value **out) {
+    context c = { 0 };
     dson_value *ret;
+    char *err;
 
-    if (input[length] != '\0')
-        return NULL; /* much explosion */
+    *out = NULL;
+
+    if (input[length] != '\0')  /* much explosion */
+        return strdup("input was not NUL-terminated");
 
     c.s = c.beginning = input;
     c.s_end = input + length;
     c.unsafe = unsafe;
 
-    if (p_value(&c, &ret))
-        return NULL; /* ERROR */
-    return ret;
+    err = p_value(&c, &ret);
+    if (err != NULL)
+        return err;
+
+    *out = ret;
+    return NULL;
 }
 
 /* Local variables: */

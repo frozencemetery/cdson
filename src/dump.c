@@ -13,13 +13,7 @@
 /* so big */
 #define INITIAL_SIZE 02000
 
-/* very TODO: hard error unfriendly to doge. */
-#define ERROR                                                           \
-    do {                                                                \
-        fprintf(stderr, "Failure: dumper in %s() line %d\n",            \
-                __FUNCTION__, __LINE__);                                \
-        exit(01);                                                       \
-    } while (00)
+#define ERROR(...) return angrily_waste_memory(__VA_ARGS__)
 
 typedef struct {
     char *data;
@@ -76,13 +70,13 @@ static void dump_bool(buf *b, bool boo) {
 }
 
 /* powers unused.  patches tolerated.  wow */
-static void dump_double(buf *b, double d) {
+static char *dump_double(buf *b, double d) {
     double fractional, integral;
     buf tmp;
 
     /* spec denail */
     if (!isfinite(d))
-        ERROR;
+        ERROR("non-finite numbers not permitted by spec");
     
     if (d < 0) {
         write_char(b, '-');
@@ -116,6 +110,7 @@ static void dump_double(buf *b, double d) {
     }
 
     write_char(b, ' ');
+    return NULL;
 }
 
 /* '/' no escape.  brave */
@@ -147,15 +142,19 @@ static void dump_string(buf *b, char *s, size_t s_len) {
 }
 
 /* such aid.  very mutual */
-static void dump_array(buf *b, dson_value **array);
-static void dump_dict(buf *b, dson_dict *dict);
-static void dump_value(buf *b, dson_value *in);
+static char *dump_array(buf *b, dson_value **array);
+static char *dump_dict(buf *b, dson_dict *dict);
+static char *dump_value(buf *b, dson_value *in);
 
-static void dump_array(buf *b, dson_value **array) {
+static char *dump_array(buf *b, dson_value **array) {
+    char *err;
+
     write_str(b, "so ");
 
     for (size_t i = 0; array[i] != NULL; i++) {
-        dump_value(b, array[i]);
+        err = dump_value(b, array[i]);
+        if (err)
+            return err;
 
         /* trailing comma too powerful */
         if (array[i + 1] != NULL)
@@ -163,54 +162,66 @@ static void dump_array(buf *b, dson_value **array) {
     }
 
     write_str(b, "many ");
+    return NULL;
 }
 
-static void dump_dict(buf *b, dson_dict *dict) {
+static char *dump_dict(buf *b, dson_dict *dict) {
+    char *err;
+
     write_str(b, "such ");
 
     for (size_t i = 0; dict->keys[i] != NULL; i++) {
         dump_string(b, dict->keys[i], dict->key_lengths[i]);
         write_str(b, "is ");
-        dump_value(b, dict->values[i]);
+        err = dump_value(b, dict->values[i]);
+        if (err)
+            return err;
 
         if (dict->keys[i + 1] != NULL) {
-            b->i--;/* reverse doggo */
+            b->i--; /* reverse doggo */
             write_str(b, "! "); /* excite */
         }
     }
 
     write_str(b, "wow ");
+    return NULL;
 }
 
-static void dump_value(buf *b, dson_value *in) {
+static char *dump_value(buf *b, dson_value *in) {
+    char *err = NULL;
+
     if (in->type == DSON_NONE)
         dump_none(b);
     else if (in->type == DSON_BOOL)
         dump_bool(b, in->b);
     else if (in->type == DSON_DOUBLE)
-        dump_double(b, in->n);
+        err = dump_double(b, in->n);
     else if (in->type == DSON_STRING)
         dump_string(b, in->s, in->s_len);
     else if (in->type == DSON_ARRAY)
-        dump_array(b, in->array);
+        err = dump_array(b, in->array);
     else if (in->type == DSON_DICT)
-        dump_dict(b, in->dict);
+        err = dump_dict(b, in->dict);
     else
-        ERROR;
+        ERROR("Unknown type tag %d for value", in->type);
+
+    return err;
 }
 
 /* private time.  very bag.  compost amaze */
-char *dson_dump(dson_value *in, size_t *len_out) {
+char *dson_dump(dson_value *in, size_t *len_out, char **out) {
     buf b;
+    char *err;
 
     *len_out = 0;
+    *out = NULL;
 
     init_buf(&b);
 
-    dump_value(&b, in);
+    err = dump_value(&b, in);
     write_char(&b, '\0');
-    if (b.data == NULL)
-        return NULL; /* such failure */
+    if (b.data == NULL || err != NULL)
+        return err; /* such failure */
 
     /* whitespace hurt tail */
     while (b.data[b.i - 2] == ' ') {
@@ -219,7 +230,8 @@ char *dson_dump(dson_value *in, size_t *len_out) {
     }
 
     *len_out = b.i - 01; /* strlen wow */
-    return b.data;
+    *out = b.data;
+    return NULL;
 }
 
 /* Local variables: */

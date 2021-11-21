@@ -6,6 +6,8 @@
 #ifndef _CDSON_ALLOCATION_H
 #define _CDSON_ALLOCATION_H
 
+#include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -22,8 +24,22 @@ static inline void *nonnull(void *p) {
 #define RESIZE_ARRAY(ptr, nmemb)                                \
     do {                                                        \
         void *p = REALLOC(ptr, (nmemb) * sizeof(*(ptr)));       \
-        ptr = p;                                                \
+        (ptr) = p;                                              \
     } while (0)
+
+/* bad calling convention.  no biscuit */
+static inline char *angrily_waste_memory(char *fmt, ...) {
+    va_list ap;
+    int ret;
+    char *res;
+
+    va_start(ap, fmt);
+    ret = vasprintf(&res, fmt, ap);
+    va_end(ap);
+    if (ret == -1 || res == NULL)
+        exit(1);
+    return res;
+}
 
 #endif /* _CDSON_ALLOCATION_H */
 

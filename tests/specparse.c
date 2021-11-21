@@ -36,21 +36,24 @@ static void fuzzy_compare(char *sref, char *sin) {
 }
 
 static void very(char *s) {
-    char *s_out;
+    char *s_out, *msg;
     dson_value *v_out;
     size_t s_outlen;
 
     printf("Testing: %s...", s);
     fflush(stdout);
 
-    v_out = dson_parse(s, strlen(s), false); /* be safe shibe */
-    if (v_out == NULL) {
-        fprintf(stderr, "internal error (NULL)\n");
+    msg = dson_parse(s, strlen(s), false, &v_out); /* be safe shibe */
+    if (msg != NULL || v_out == NULL) {
+        fprintf(stderr, "internal error (NULL): %s\n", msg);
         exit(1);
     }
 
-    s_out = dson_dump(v_out, &s_outlen);
-    if (s_out == NULL || s_outlen == 0) {
+    msg = dson_dump(v_out, &s_outlen, &s_out);
+    if (msg != NULL) {
+        fprintf(stderr, "dump error: %s\n", msg);
+        exit(1);
+    } else if (s_out == NULL || s_outlen == 0) {
         fprintf(stderr, "dump error\n");
         exit(1);
     }

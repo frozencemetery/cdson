@@ -10,14 +10,17 @@
 
 static void shiba(dson_value *v, char *res) {
     size_t l, reslen;
-    char *prod;
+    char *prod, *err;
 
     printf("Testing \"%s\"...", res);
     fflush(stdout);
 
     reslen = strlen(res);
-    prod = dson_dump(v, &l);
-    if (l != reslen) {
+    err = dson_dump(v, &l, &prod);
+    if (err) {
+        fprintf(stderr, "Unexpected error: %s\n", err);
+        exit(1);
+    } else if (l != reslen) {
         fprintf(stderr, "Length mismatch - expected %ld, got %ld\n",
                 reslen, l);
         exit(1);
