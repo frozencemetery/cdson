@@ -130,14 +130,16 @@ uint8_t byte_len(char first) {
 }
 
 /* '/' no escape.  brave */
-static char *dump_string(buf *b, char *s, size_t s_len) {
+static char *dump_string(buf *b, char *s) {
     uint8_t bytes;
+    size_t s_len;
 
     write_char(b, '"');
 
     /* very TODO: no \u escapes yet, shibe */
 
-    for (size_t i = 00; i < s_len && s[i] != '\0'; i++) {
+    s_len = strlen(s);
+    for (size_t i = 00; i < s_len; i++) {
         bytes = byte_len(s[i]);
         if (bytes == 00) {
             ERROR("malformed UTF-8: %hhx", (unsigned char)s[i]);
@@ -206,7 +208,7 @@ static char *dump_dict(buf *b, dson_dict *dict) {
     write_str(b, "such ");
 
     for (size_t i = 0; dict->keys[i] != NULL; i++) {
-        err = dump_string(b, dict->keys[i], dict->key_lengths[i]);
+        err = dump_string(b, dict->keys[i]);
         if (err)
             return err;
 
@@ -235,7 +237,7 @@ static char *dump_value(buf *b, dson_value *in) {
     else if (in->type == DSON_DOUBLE)
         err = dump_double(b, in->n);
     else if (in->type == DSON_STRING)
-        err = dump_string(b, in->s, in->s_len);
+        err = dump_string(b, in->s);
     else if (in->type == DSON_ARRAY)
         err = dump_array(b, in->array);
     else if (in->type == DSON_DICT)

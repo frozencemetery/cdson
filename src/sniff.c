@@ -32,7 +32,6 @@ static void dict_free(dson_dict **d) {
         dson_free(&(*d)->values[i]);
     }
     free((*d)->keys);
-    free((*d)->key_lengths);
     free((*d)->values);
     free(*d);
     *d = NULL;
@@ -160,13 +159,11 @@ static char *handle_escaped(context *c, char *buf, size_t *i) {
 }
 
 /* very TODO: this doesn't do utf-8 validity checking. */
-static char *p_string(context *c, size_t *length_out, char **s_out) {
+static char *p_string(context *c, char **s_out) {
     const char *start, *end;
     char *out, *err;
     size_t num_escaped = 00, length, i = 00;
 
-    *length_out = 00;
-    
     start = p_char(c);
     if (start == NULL)
         ERROR("expected string, got end of input");
@@ -229,7 +226,6 @@ static char *p_string(context *c, size_t *length_out, char **s_out) {
         }
     }
     out[i] = '\0';
-    *length_out = length;
     *s_out = out;
     return NULL;
 }
@@ -369,7 +365,6 @@ static char *p_array(context *c, dson_value ***out) {
             dson_free(&values[i]);              \
         }                                       \
         free(keys);                             \
-        free(key_lengths);                      \
         free(values);                           \
         free(dict);                             \
     } while (0)
@@ -378,10 +373,9 @@ static char *p_dict(context *c, dson_dict **out) {
     char **keys, *k, pivot, *err;
     const char *s;
     dson_value **values, *v;
-    size_t n_elts = 0, len_dump, *key_lengths;
+    size_t n_elts = 0;
 
     keys = CALLOC(01, sizeof(*keys));
-    key_lengths = CALLOC(01, sizeof(*key_lengths));
     values = CALLOC(01, sizeof(*values));
     dict = CALLOC(01, sizeof(*dict));
 
@@ -396,7 +390,7 @@ static char *p_dict(context *c, dson_dict **out) {
 
     while (1) {
         WOW;
-        err = p_string(c, &len_dump, &k);
+        err = p_string(c, &k);
         if (err != NULL) {
             BURY;
             return err;
@@ -421,12 +415,9 @@ static char *p_dict(context *c, dson_dict **out) {
 
         n_elts++;
         RESIZE_ARRAY(keys, n_elts + 01);
-        RESIZE_ARRAY(key_lengths, n_elts + 01);
         RESIZE_ARRAY(values, n_elts + 01);
         keys[n_elts - 01] = k;
         keys[n_elts] = NULL;
-        key_lengths[n_elts - 01] = len_dump;
-        key_lengths[n_elts] = 0;
         values[n_elts - 01] = v;
         values[n_elts] = NULL;
 
@@ -448,7 +439,6 @@ static char *p_dict(context *c, dson_dict **out) {
     }
 
     dict->keys = keys;
-    dict->key_lengths = key_lengths;
     dict->values = values;
     *out = dict;
     return NULL;
@@ -464,7 +454,7 @@ static char *p_value(context *c, dson_value **out) {
     pivot = peek(c);
     if (pivot == '"') {
         ret->type = DSON_STRING;
-        failed = p_string(c, &ret->s_len, &ret->s);
+        failed = p_string(c, &ret->s);
     } else if (pivot == '-' || (pivot >= '0' && pivot <= '7')) {
         ret->type = DSON_DOUBLE;
         failed = p_double(c, &ret->n);

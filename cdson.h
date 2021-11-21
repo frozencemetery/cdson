@@ -30,7 +30,6 @@ typedef uint8_t dson_type; /* Can't put enum in header file. */
  * terminating \0 (as in strlen). */
 typedef struct dson_dict {
     char **keys;
-    size_t *key_lengths;
     struct dson_value **values;
 } dson_dict;
 
@@ -40,10 +39,7 @@ typedef struct dson_value {
     union {
         bool b;
         double n;
-        struct { /* string - valid, \0-terminated UTF-8. */
-            char *s;
-            size_t s_len;
-        };
+        char *s; /* string - valid, \0-terminated UTF-8. */
         struct dson_value **array;
         dson_dict *dict;
     };
