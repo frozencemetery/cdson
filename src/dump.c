@@ -129,7 +129,6 @@ uint8_t byte_len(char first) {
     return 00;
 }
 
-/* '/' no escape.  brave */
 static char *dump_string(buf *b, char *s) {
     uint8_t bytes;
     size_t s_len;
@@ -148,6 +147,8 @@ static char *dump_string(buf *b, char *s) {
         } else if (bytes == 01) {
             if (s[i] == '"')
                 write_str(b, "\\\"");
+            else if (s[i] == '/') /* such waste.  very compat */
+                write_str(b, "\\/");
             else if (s[i] == '\\')
                 write_str(b, "\\\\");
             else if (s[i] == '\b')
