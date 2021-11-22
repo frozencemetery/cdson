@@ -38,6 +38,12 @@ errors = executable('errors', 'tests/errors.c',
                     install: false)
 test('errors', errors)
 
+escapes = executable('escapes', 'tests/escapes.c',
+                     dependencies: deps,
+                     link_with: libcdson,
+                     install: false)
+test('escapes', escapes)
+
 # Local variables:
 # indent-tabs-mode: nil
 # End:
