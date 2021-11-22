@@ -14,7 +14,7 @@ deps = [m_dep]
 add_global_arguments('-D_GNU_SOURCE', language: 'c')
 
 libcdson = library('libcdson', 'cdson.h', 'src/dump.c', 'src/sniff.c',
-                   'src/allocation.h', 'src/unicode.h', 'src/unicode.c',
+                   'src/allocation.h',
                    dependencies: deps,
                    install: true)
 
