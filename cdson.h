@@ -59,9 +59,10 @@ typedef struct dson_value {
 char *dson_parse(const char *input, size_t length, bool unsafe,
                  dson_value **out);
 
-/* Serialize a DSON object into a UTF-8 bytestream.  Pass the returned string
- * to free() to release allocated storage.  Returns NULL on success, or an
- * error message on failure.  Pass error message to free(). */
+/* Serialize a DSON object into a UTF-8 bytestream.  All strings must be valid
+ * UTF-8.  Pass the returned string to free() to release allocated storage.
+ * Returns NULL on success, or an error message on failure.  Pass error
+ * message to free(). */
 char *dson_dump(dson_value *in, size_t *len_out, char **out);
 
 /* Recursively free and NULL a DSON object. */

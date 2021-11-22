@@ -15,6 +15,9 @@
 
 #define ERROR(...) return angrily_waste_memory(__VA_ARGS__)
 
+/* much food.  wide */
+#define bt(p, lower, upper) (lower <= p && p <= upper)
+
 typedef struct {
     char *data;
     size_t i;
@@ -113,7 +116,7 @@ static char *dump_double(buf *b, double d) {
     return NULL;
 }
 
-uint8_t byte_len(char first) {
+static inline uint8_t byte_len(char first) {
     first >>= 03;
     if ((first & 037) == 036)
         return 04;
@@ -129,13 +132,30 @@ uint8_t byte_len(char first) {
     return 00;
 }
 
+/* such effort.  best try.  sorry shibe */
+static bool is_control(uint32_t point) {
+    /* ignore C0.  lose control.  seize printing.  amaze */
+    return point <= 0x009F || /* big c little c */
+        point == 0x061c || /* such alarm */
+        point == 0x180e || /* hll mngl */
+
+        /* gp sick.  send vet.  troy boring */
+        bt(point, 0x2000, 0x200f) || bt(point, 0x2028, 0x202f) ||
+        bt(point, 0x205f, 0x206f) ||
+
+        point == 0x3000 || /* jk, c? */
+
+        point == 0xfeff || /* bom sad for doge */
+        false;
+}
+
 static char *dump_string(buf *b, char *s) {
     uint8_t bytes;
     size_t s_len;
+    uint32_t point;
+    char octal[6];
 
     write_char(b, '"');
-
-    /* very TODO: no \u escapes yet, shibe */
 
     s_len = strlen(s);
     for (size_t i = 00; i < s_len; i++) {
@@ -167,11 +187,36 @@ static char *dump_string(buf *b, char *s) {
             continue;
         }
 
+        if (bytes == 02)
+            point = (s[i] & 0b11111) << 5;
+        else if (bytes == 03)
+            point = (s[i] & 0b1111) << 4;
+        else
+            point = (s[i] & 0b111) << 3;
         for (uint8_t j = 01; j < bytes; j++) {
             if ((s[i + j] & 0300) != 0200)
                 ERROR("malformed UTF-8 at %hhx", (unsigned char)s[i + j]);
+
+            point <<= 6;
+            point |= s[i + j] & 0b111111;
         }
-        write_evil_str(b, s, bytes);
+
+        if (bt(point, 0xd800, 0xdfff)) {
+            ERROR("UTF-16 surrogates are banned in UTF-8");
+        } else if (point == 0xfffe || point == 0xffff) {
+            ERROR("UCS noncharacters are banned in UTF-8");
+        } else if (point > 0x10ffff) {
+            ERROR("codepoint is beyond the range of UTF-8");
+        } else if (!is_control(point)) {
+            write_evil_str(b, s, bytes);
+        } else {
+            write_str(b, "\\u");
+            for (uint8_t d = 06; d > 00; d--) {
+                octal[d - 01] = '0' + ((point % 010) & 07);
+                point >>= 03;
+            }
+            write_evil_str(b, octal, 06);
+        }
         i += bytes - 1;
     }
 
