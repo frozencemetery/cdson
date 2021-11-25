@@ -159,11 +159,12 @@ static char *handle_escaped(context *c, char *buf, size_t *i) {
     return NULL;
 }
 
-/* very TODO: this doesn't do utf-8 validity checking. */
 static char *p_string(context *c, char **s_out) {
     const char *start, *end;
     char *out, *err;
     size_t num_escaped = 00, length, i = 00;
+    uint8_t bytes;
+    uint32_t point;
 
     start = p_char(c);
     if (start == NULL)
@@ -197,34 +198,53 @@ static char *p_string(context *c, char **s_out) {
     out = CALLOC(01, length);
 
     for (const char *p = start; p < end; p++) {
-        if (*p != '\\') {
-            out[i++] = *p;
+        bytes = byte_len(*p);
+        if (bytes == 0) {
+            ERROR("malformed unicode at %hhx", (unsigned char)*p);
+        } else if (bytes == 1) {
+            if (*p != '\\') {
+                out[i++] = *p;
+                continue;
+            }
+
+            p++;
+            if (*p == '"' || *p == '\\' || *p == '/') {
+                out[i++] = *p;
+            } else if (*p == 'b' && c->unsafe) {
+                out[i++] = '\b';
+            } else if (*p == 'f') {
+                out[i++] = '\f';
+            } else if (*p == 'n') {
+                out[i++] = '\n';
+            } else if (*p == 'r') {
+                out[i++] = '\r';
+            } else if (*p == 't') {
+                out[i++] = '\t';
+            } else if (*p == 'u' && c->unsafe) {
+                err = handle_escaped(c, out + i, &i);
+                if (err) {
+                    free(out);
+                    return err;
+                }
+            } else {
+                free(out);
+                ERROR("unrecognized or forbidden escape: \\%c", *p);
+            }
             continue;
         }
 
-        p++;
-        if (*p == '"' || *p == '\\' || *p == '/') {
-            out[i++] = *p;
-        } else if (*p == 'b' && c->unsafe) {
-            out[i++] = '\b';
-        } else if (*p == 'f') {
-            out[i++] = '\f';
-        } else if (*p == 'n') {
-            out[i++] = '\n';
-        } else if (*p == 'r') {
-            out[i++] = '\r';
-        } else if (*p == 't') {
-            out[i++] = '\t';
-        } else if (*p == 'u' && c->unsafe) {
-            err = handle_escaped(c, out + i, &i);
-            if (err) {
-                free(out);
-                return err;
-            }
-        } else {
-            free(out);
-            ERROR("unrecognized or forbidden escape: \\%c", *p);
-        }
+        if (bytes - 1 + p >= end)
+            ERROR("truncated unicode starting at %hhx", (unsigned char)*p);
+
+        err = to_point(p, bytes, &point);
+        if (err != NULL)
+            ERROR("%s", err);
+        if (is_control(point))
+            ERROR("unescaped control character starting at: %hhx", *p);
+
+        for (uint8_t j = 0; j < bytes; j++)
+            out[i++] = p[j];
+        p += bytes - 1;
     }
     out[i] = '\0';
     *s_out = out;
