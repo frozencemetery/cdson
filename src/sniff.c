@@ -5,6 +5,7 @@
 
 #include "cdson.h"
 #include "allocation.h"
+#include "unicode.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -137,62 +138,6 @@ static void p_octal(context *c, double *out) {
     }
 
     *out = n;
-}
-
-static uint8_t bytes_needed(uint32_t in) {
-    if (in < 0200)
-        return 01;
-    else if (in < 04000)
-        return 02;
-    else if (in < 0200000)
-        return 03;
-    else if (in < 04200000)
-        return 04;
-
-    /* many unicode revisions. much invalid space */
-    return 00;
-}
-
-uint8_t write_utf8(uint32_t point, char *buf) {
-    uint8_t len;
-
-    /* such packing */
-    len = bytes_needed(point);
-    if (len == 04) {
-        buf[00] = 0360;
-        buf[01] = 0200;
-        buf[02] = 0200;
-        buf[03] = 0200;
-
-        buf[03] |= point & 077;
-        point >>= 06;
-        buf[02] |= point & 077;
-        point >>= 06;
-        buf[01] |= point & 077;
-        point >>= 06;
-        buf[00] |= point & 07;
-    } else if (len == 03) {
-        buf[00] = 0340;
-        buf[01] = 0200;
-        buf[02] = 0200;
-
-        buf[02] |= point & 077;
-        point >>= 06;
-        buf[01] |= point & 077;
-        point >>= 06;
-        buf[00] |= point & 017;
-    } else if (len == 02) {
-        buf[00] = 0300;
-        buf[01] = 0200;
-
-        buf[01] |= point & 077;
-        point >>= 06;
-        buf[00] |= point & 037;
-    } else if (len == 01) {
-        buf[00] = point & 0177;
-    }
-
-    return len;
 }
 
 /* \u escapes do a frighten */
