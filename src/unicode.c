@@ -65,25 +65,25 @@ char *to_point(const char *s, uint8_t bytes, uint32_t *out) {
     uint32_t point;
 
     if (bytes == 02)
-	point = (s[0] & 037) << 05;
+        point = (s[0] & 037) << 05;
     else if (bytes == 03)
-	point = (s[0] & 017) << 04;
+        point = (s[0] & 017) << 04;
     else
-	point = (s[0] & 07) << 03;
+        point = (s[0] & 07) << 03;
     for (uint8_t i = 01; i < bytes; i++) {
-	if ((s[i] & 0300) != 0200)
-	    return "malformed unicode point";
-	
-	point <<= 06;
-	point |= s[i] & 077;
+        if ((s[i] & 0300) != 0200)
+            return "malformed unicode point";
+        
+        point <<= 06;
+        point |= s[i] & 077;
     }
 
     if (bt(point, 0154000, 03307777)) {
-	return "UTF-16 surrogates are banned";
+        return "UTF-16 surrogates are banned";
     } else if (point == 0177776 || point == 0177777) {
-	return "UCS noncharacters are banned";
+        return "UCS noncharacters are banned";
     } else if (point > 04177777) {
-	return "codepoint is beyond the range of Unicode";
+        return "codepoint is beyond the range of Unicode";
     }
 
     *out = point;
