@@ -43,6 +43,7 @@ static void array_free(dson_value ***vs) {
     *vs = NULL;
 }
 
+/* doggo free.  amaze */
 void dson_free(dson_value **v) {
     if (v == NULL)
         return;
