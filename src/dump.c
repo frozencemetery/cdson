@@ -158,7 +158,7 @@ static char *dump_string(buf *b, char *s) {
             ERROR(err);
 
         if (!is_control(point)) {
-            write_evil_str(b, s, bytes);
+            write_evil_str(b, &s[i], bytes);
         } else {
             write_str(b, "\\u");
             for (uint8_t d = 06; d > 00; d--) {
