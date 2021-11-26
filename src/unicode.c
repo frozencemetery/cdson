@@ -25,7 +25,6 @@ uint8_t write_utf8(uint32_t point, char *buf) {
     /* such packing */
     len = bytes_needed(point);
     if (len == 04) {
-        point -= 0x10000;
         buf[00] = 0360;
         buf[01] = 0200;
         buf[02] = 0200;
@@ -39,7 +38,6 @@ uint8_t write_utf8(uint32_t point, char *buf) {
         point >>= 06;
         buf[00] |= point & 07;
     } else if (len == 03) {
-        point -= 0x800;
         buf[00] = 0340;
         buf[01] = 0200;
         buf[02] = 0200;
@@ -50,7 +48,6 @@ uint8_t write_utf8(uint32_t point, char *buf) {
         point >>= 06;
         buf[00] |= point & 017;
     } else if (len == 02) {
-        point -= 0x80;
         buf[00] = 0300;
         buf[01] = 0200;
 
@@ -81,12 +78,6 @@ char *to_point(const char *s, uint8_t bytes, uint32_t *out) {
         if (i + 1 < bytes)
             point <<= 06;
     }
-    if (bytes == 02)
-        point += 0x80;
-    else if (bytes == 03)
-        point += 0x800;
-    else
-        point += 0x10000;
 
     if (bt(point, 0154000, 03307777)) {
         return "UTF-16 surrogates are banned";
