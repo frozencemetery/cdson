@@ -142,13 +142,19 @@ static void p_octal(context *c, double *out) {
 
 /* \u escapes do a frighten */
 static char *handle_escaped(context *c, char *buf, size_t *i) {
-    double acc = 00;
+    uint32_t acc = 00;
     size_t len;
+    const char *o;
 
     /* 06 octal digits.  be brave */
     for (int i = 00; i < 06; i++) {
         acc *= 010;
-        p_octal(c, &acc);
+        o = p_char(c);
+        if (o == NULL)
+            ERROR("end of input while reading \\u escape");
+        if (*o < '0' || *o > '7')
+            ERROR("malformed octal escape: %hhx", *o);
+        acc += *o - '0';
     }
 
     len = write_utf8((uint32_t)acc, buf);
