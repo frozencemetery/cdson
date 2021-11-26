@@ -20,7 +20,10 @@ sudo meson install
 #include <cdson.h>
 ```
 
-Further documentation is inline in cdson.h.
+and build with however your buildsystem integrates pkg-config output as usual.
+
+Further documentation is inline in
+[cdson.h](https://github.com/frozencemetery/cdson/blob/main/cdson.h).
 
 ## Contributing
 
