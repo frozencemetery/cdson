@@ -114,11 +114,21 @@ static char *dump_double(buf *b, double d) {
     return NULL;
 }
 
+static void write_escaped_control(buf *b, uint32_t point) {
+    char octal[6];
+
+    write_str(b, "\\u");
+    for (uint8_t d = 06; d > 00; d--) {
+        octal[d - 01] = '0' + ((point % 010) & 07);
+        point >>= 03;
+    }
+    write_evil_str(b, octal, 06);
+}
+
 static char *dump_string(buf *b, char *s) {
     uint8_t bytes;
     size_t s_len;
     uint32_t point;
-    char octal[6];
     char *err;
 
     write_char(b, '"');
@@ -147,8 +157,10 @@ static char *dump_string(buf *b, char *s) {
                 write_str(b, "\\r");
             else if (s[i] == '\t')
                 write_str(b, "\\t");
-            else
+            else if (s[i] >= ' ')
                 write_char(b, s[i]);
+            else
+                write_escaped_control(b, s[i]);
 
             continue;
         }
@@ -157,16 +169,10 @@ static char *dump_string(buf *b, char *s) {
         if (err != NULL)
             ERROR(err);
 
-        if (!is_control(point)) {
+        if (!is_control(point))
             write_evil_str(b, &s[i], bytes);
-        } else {
-            write_str(b, "\\u");
-            for (uint8_t d = 06; d > 00; d--) {
-                octal[d - 01] = '0' + ((point % 010) & 07);
-                point >>= 03;
-            }
-            write_evil_str(b, octal, 06);
-        }
+        else
+            write_escaped_control(b, point);
         i += bytes - 1;
     }
 
