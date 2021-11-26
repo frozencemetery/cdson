@@ -25,38 +25,33 @@ uint8_t write_utf8(uint32_t point, char *buf) {
     /* such packing */
     len = bytes_needed(point);
     if (len == 04) {
-        buf[00] = 0360;
-        buf[01] = 0200;
-        buf[02] = 0200;
-        buf[03] = 0200;
-
-        buf[03] |= point & 077;
+        buf[03] = point & 077;
         point >>= 06;
-        buf[02] |= point & 077;
+        buf[02] = point & 077;
         point >>= 06;
-        buf[01] |= point & 077;
+        buf[01] = point & 077;
         point >>= 06;
-        buf[00] |= point & 07;
+        buf[00] = point & 07;
+        buf[00] |= 0360;
     } else if (len == 03) {
-        buf[00] = 0340;
-        buf[01] = 0200;
-        buf[02] = 0200;
-
-        buf[02] |= point & 077;
+        buf[02] = point & 077;
         point >>= 06;
-        buf[01] |= point & 077;
+        buf[01] = point & 077;
         point >>= 06;
-        buf[00] |= point & 017;
+        buf[00] = point & 017;
+        buf[00] |= 0340;
     } else if (len == 02) {
-        buf[00] = 0300;
-        buf[01] = 0200;
-
-        buf[01] |= point & 077;
+        buf[01] = point & 077;
         point >>= 06;
-        buf[00] |= point & 037;
+        buf[00] = point & 037;
+
+        buf[00] |= 0300;
     } else if (len == 01) {
         buf[00] = point & 0177;
     }
+
+    for (uint8_t d = 01; d < len; d++)
+        buf[d] |= 0200;
 
     return len;
 }
