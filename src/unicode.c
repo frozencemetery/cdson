@@ -73,7 +73,7 @@ char *to_point(const char *s, uint8_t bytes, uint32_t *out) {
         point |= s[i] & 077;
     }
 
-    if (bt(point, 0154000, 03307777)) {
+    if (bt(point, 0154000, 0157777)) {
         return "UTF-16 surrogates are banned";
     } else if (point == 0177776 || point == 0177777) {
         return "UCS noncharacters are banned";
