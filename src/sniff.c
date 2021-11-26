@@ -171,6 +171,7 @@ static char *p_string(context *c, char **s_out) {
     size_t num_escaped = 00, length, i = 00;
     uint8_t bytes;
     uint32_t point;
+    context c2 = { 0 };
 
     start = p_char(c);
     if (start == NULL)
@@ -227,11 +228,15 @@ static char *p_string(context *c, char **s_out) {
             } else if (*p == 't') {
                 out[i++] = '\t';
             } else if (*p == 'u' && c->unsafe) {
-                err = handle_escaped(c, out + i, &i);
+                c2.s = p + 1; /* no u */
+                c2.s_end = end;
+                c2.unsafe = true;
+                err = handle_escaped(&c2, out + i, &i);
                 if (err) {
                     free(out);
                     return err;
                 }
+                p += 06;
             } else {
                 free(out);
                 ERROR("unrecognized or forbidden escape: \\%c", *p);
