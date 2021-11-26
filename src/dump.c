@@ -262,8 +262,10 @@ char *dson_dump(dson_value *in, size_t *len_out, char **out) {
 
     err = dump_value(&b, in);
     write_char(&b, '\0');
-    if (b.data == NULL || err != NULL)
+    if (b.data == NULL || err != NULL) {
+        free(b.data);
         return err; /* such failure */
+    }
 
     /* whitespace hurt tail */
     while (b.data[b.i - 02] == ' ') {

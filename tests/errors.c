@@ -18,6 +18,7 @@ static void wag(char *s) {
 
     err = dson_parse(s, strlen(s), false, &v);
     if (err == NULL) {
+        dson_free(&v);
         printf("unexpected success!\n");
         exit(1);
     }
@@ -33,6 +34,7 @@ static void bark(dson_value *v) {
     fflush(stdout);
     err = dson_dump(v, &s_len, &s);
     if (err == NULL) {
+        free(s);
         printf("unexpected success\n");
         exit(1);
     }

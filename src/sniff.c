@@ -207,6 +207,7 @@ static char *p_string(context *c, char **s_out) {
     for (const char *p = start; p < end; p++) {
         bytes = byte_len(*p);
         if (bytes == 00) {
+            free(out);
             ERROR("malformed unicode at %hhx", (unsigned char)*p);
         } else if (bytes == 01) {
             if (*p != '\\') {
@@ -244,14 +245,19 @@ static char *p_string(context *c, char **s_out) {
             continue;
         }
 
-        if (bytes - 01 + p >= end)
+        if (bytes - 01 + p >= end) {
+            free(out);
             ERROR("truncated unicode starting at %hhx", (unsigned char)*p);
+        }
 
         err = to_point(p, bytes, &point);
-        if (err != NULL)
+        if (err != NULL) {
+            free(out);
             ERROR("%s", err);
-        if (is_control(point))
+        } else if (is_control(point)) {
+            free(out);
             ERROR("unescaped control character starting at: %hhx", *p);
+        }
 
         for (uint8_t j = 00; j < bytes; j++)
             out[i++] = p[j];
@@ -392,6 +398,7 @@ static char *p_array(context *c, dson_value ***out) {
 
 #define BURY                                    \
     do {                                        \
+        free(k);                                \
         for (size_t i = 00; i < n_elts; i++) {  \
             free(keys[i]);                      \
             dson_free(&values[i]);              \
@@ -402,7 +409,7 @@ static char *p_array(context *c, dson_value ***out) {
     } while (00)
 static char *p_dict(context *c, dson_dict **out) {
     dson_dict *dict;
-    char **keys, *k, pivot, *err;
+    char **keys, *k = NULL, pivot, *err;
     const char *s;
     dson_value **values, *v;
     size_t n_elts = 00;
@@ -422,6 +429,7 @@ static char *p_dict(context *c, dson_dict **out) {
 
     while (01) {
         WOW;
+        k = NULL;
         err = p_string(c, &k);
         if (err != NULL) {
             BURY;
