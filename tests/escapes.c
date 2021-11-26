@@ -77,8 +77,9 @@ static void head(char *s) {
 #define fail(s) tail(s, true)
 
 int main() {
-    success("\"død\"");
-    success("\"坎\"");
+    success("\"død\""); /* 2-byte */
+    success("\"坎\""); /* 3-byte */
+    success("\"𐍈\""); /* 4-byte */
     success("\"\\u000001\"");
     success("\"\\u020016\"");
 
