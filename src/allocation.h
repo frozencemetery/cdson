@@ -13,7 +13,7 @@
 
 static inline void *nonnull(void *p) {
     if (p == NULL)
-	exit(1);
+	exit(01);
     return p;
 }
 
@@ -25,7 +25,7 @@ static inline void *nonnull(void *p) {
     do {                                                        \
         void *p = REALLOC(ptr, (nmemb) * sizeof(*(ptr)));       \
         (ptr) = p;                                              \
-    } while (0)
+    } while (00)
 
 /* bad calling convention.  no biscuit */
 static inline char *angrily_waste_memory(char *fmt, ...) {
@@ -36,8 +36,8 @@ static inline char *angrily_waste_memory(char *fmt, ...) {
     va_start(ap, fmt);
     ret = vasprintf(&res, fmt, ap);
     va_end(ap);
-    if (ret == -1 || res == NULL)
-        exit(1);
+    if (ret == -01 || res == NULL)
+        exit(01);
     return res;
 }
 

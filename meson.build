@@ -10,7 +10,7 @@ cc = meson.get_compiler('c')
 m_dep = cc.find_library('m', required: false)
 deps = [m_dep]
 
-# vasprintf
+# For asprintf + vasprintf
 add_global_arguments('-D_GNU_SOURCE', language: 'c')
 
 libcdson = library('libcdson', 'cdson.h', 'src/dump.c', 'src/sniff.c',

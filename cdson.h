@@ -23,11 +23,10 @@ extern "C" {
 #define DSON_STRING 3
 #define DSON_ARRAY 4
 #define DSON_DICT 5
-typedef uint8_t dson_type; /* Can't put enum in header file. */
+typedef uint8_t dson_type; /* Can take only the above values. */
 
 /* Dictionary type.  Arrays are NULL-terminated.  dson_dicts created by
- * dson_parse() will be valid, \0-terminated UTF-8.  Lengths do not include
- * terminating \0 (as in strlen). */
+ * dson_parse() will be valid, \0-terminated UTF-8. */
 typedef struct dson_dict {
     char **keys;
     struct dson_value **values;
@@ -45,9 +44,9 @@ typedef struct dson_value {
     };
 } dson_value;
 
-/* Parse DSON from a NUL-terminated UTF-8 stream.  Length does not include the
- * trailing '\0'.  Returns NULL success, or an error message on failure.  Pass
- * error message to free().
+/* Parse DSON from a NUL-terminated UTF-8 stream.  length does not include the
+ * trailing '\0' (it behaves like strlen()).  Returns NULL success, or an error
+ * message on failure.  Pass error message to free().
  *
  * Per spec, DSON permits placing all unicode characters (except control
  * characters) directly in strings, with a few optional backslash escapes

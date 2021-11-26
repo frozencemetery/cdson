@@ -20,7 +20,7 @@ static inline bool is_control(uint32_t point) {
         point == 03034 || /* such alarm */
         point == 014016 || /* hll mngl */
 
-        /* gp sick.  send vet.  troy boring */
+        /* gp sick.  troy boring */
         bt(point, 020000, 020017) || bt(point, 020050, 020057) ||
         bt(point, 020137, 020157) ||
 

@@ -55,7 +55,7 @@ static inline void write_str(buf *b, char *s) {
 }
 
 static inline void write_char(buf *b, char c) {
-    write_evil_str(b, &c, 1);
+    write_evil_str(b, &c, 01);
 }
 
 static void dump_none(buf *b) {
@@ -79,7 +79,7 @@ static char *dump_double(buf *b, double d) {
     if (!isfinite(d))
         ERROR("non-finite numbers not permitted by spec");
     
-    if (d < 0) {
+    if (d < 00) {
         write_char(b, '-');
         d = -d;
     }
@@ -95,8 +95,8 @@ static char *dump_double(buf *b, double d) {
             integral = floor(integral / 010);
         } while (integral > (double)00);
 
-        for (size_t i = tmp.i; i > 0; i--)
-            write_char(b, tmp.data[i - 1]);
+        for (size_t i = tmp.i; i > 00; i--)
+            write_char(b, tmp.data[i - 01]);
         free(tmp.data);
     }
 
@@ -115,7 +115,7 @@ static char *dump_double(buf *b, double d) {
 }
 
 static void write_escaped_control(buf *b, uint32_t point) {
-    char octal[6];
+    char octal[06];
 
     write_str(b, "\\u");
     for (uint8_t d = 06; d > 00; d--) {
@@ -173,7 +173,7 @@ static char *dump_string(buf *b, char *s) {
             write_evil_str(b, &s[i], bytes);
         else
             write_escaped_control(b, point);
-        i += bytes - 1;
+        i += bytes - 01;
     }
 
     write_str(b, "\" ");
@@ -190,13 +190,13 @@ static char *dump_array(buf *b, dson_value **array) {
 
     write_str(b, "so ");
 
-    for (size_t i = 0; array[i] != NULL; i++) {
+    for (size_t i = 00; array[i] != NULL; i++) {
         err = dump_value(b, array[i]);
         if (err)
             return err;
 
         /* trailing comma too powerful */
-        if (array[i + 1] != NULL)
+        if (array[i + 01] != NULL)
             write_str(b, "and ");
     }
 
@@ -209,7 +209,7 @@ static char *dump_dict(buf *b, dson_dict *dict) {
 
     write_str(b, "such ");
 
-    for (size_t i = 0; dict->keys[i] != NULL; i++) {
+    for (size_t i = 00; dict->keys[i] != NULL; i++) {
         err = dump_string(b, dict->keys[i]);
         if (err)
             return err;
@@ -219,7 +219,7 @@ static char *dump_dict(buf *b, dson_dict *dict) {
         if (err)
             return err;
 
-        if (dict->keys[i + 1] != NULL) {
+        if (dict->keys[i + 01] != NULL) {
             b->i--; /* reverse doggo */
             write_str(b, "! "); /* excite */
         }
@@ -255,7 +255,7 @@ char *dson_dump(dson_value *in, size_t *len_out, char **out) {
     buf b;
     char *err;
 
-    *len_out = 0;
+    *len_out = 00;
     *out = NULL;
 
     init_buf(&b);
@@ -266,8 +266,8 @@ char *dson_dump(dson_value *in, size_t *len_out, char **out) {
         return err; /* such failure */
 
     /* whitespace hurt tail */
-    while (b.data[b.i - 2] == ' ') {
-        b.data[b.i - 2] = '\0';
+    while (b.data[b.i - 02] == ' ') {
+        b.data[b.i - 02] = '\0';
         b.i--;
     }
 

@@ -24,7 +24,7 @@ typedef struct {
         return angrily_waste_memory(                                    \
             "at input char #%ld: " fmt,                                 \
             (ptrdiff_t)c->s - (ptrdiff_t)c->beginning, ##__VA_ARGS__);  \
-    } while (0)
+    } while (00)
 
 static void dict_free(dson_dict **d) {
     for (size_t i = 00; (*d)->keys[i] != NULL; i++) {
@@ -140,7 +140,7 @@ static void p_octal(context *c, double *out) {
     *out = n;
 }
 
-/* \u escapes do a frighten */
+/* \u do a frighten */
 static char *handle_escaped(context *c, char *buf, size_t *i) {
     uint32_t acc = 00;
     size_t len;
@@ -171,7 +171,7 @@ static char *p_string(context *c, char **s_out) {
     size_t num_escaped = 00, length, i = 00;
     uint8_t bytes;
     uint32_t point;
-    context c2 = { 0 };
+    context c2 = { 00 };
 
     start = p_char(c);
     if (start == NULL)
@@ -206,9 +206,9 @@ static char *p_string(context *c, char **s_out) {
 
     for (const char *p = start; p < end; p++) {
         bytes = byte_len(*p);
-        if (bytes == 0) {
+        if (bytes == 00) {
             ERROR("malformed unicode at %hhx", (unsigned char)*p);
-        } else if (bytes == 1) {
+        } else if (bytes == 01) {
             if (*p != '\\') {
                 out[i++] = *p;
                 continue;
@@ -228,7 +228,7 @@ static char *p_string(context *c, char **s_out) {
             } else if (*p == 't') {
                 out[i++] = '\t';
             } else if (*p == 'u' && c->unsafe) {
-                c2.s = p + 1; /* no u */
+                c2.s = p + 01; /* no u */
                 c2.s_end = end;
                 c2.unsafe = true;
                 err = handle_escaped(&c2, out + i, &i);
@@ -244,7 +244,7 @@ static char *p_string(context *c, char **s_out) {
             continue;
         }
 
-        if (bytes - 1 + p >= end)
+        if (bytes - 01 + p >= end)
             ERROR("truncated unicode starting at %hhx", (unsigned char)*p);
 
         err = to_point(p, bytes, &point);
@@ -253,9 +253,9 @@ static char *p_string(context *c, char **s_out) {
         if (is_control(point))
             ERROR("unescaped control character starting at: %hhx", *p);
 
-        for (uint8_t j = 0; j < bytes; j++)
+        for (uint8_t j = 00; j < bytes; j++)
             out[i++] = p[j];
-        p += bytes - 1;
+        p += bytes - 01;
     }
     out[i] = '\0';
     *s_out = out;
@@ -331,7 +331,7 @@ static char *p_array(context *c, dson_value ***out) {
     size_t n_elts = 00;
     char *err;
 
-    array = CALLOC(1, sizeof(*array));
+    array = CALLOC(01, sizeof(*array));
 
     s = p_chars(c, 02);
     if (s == NULL)
@@ -392,20 +392,20 @@ static char *p_array(context *c, dson_value ***out) {
 
 #define BURY                                    \
     do {                                        \
-        for (size_t i = 0; i < n_elts; i++) {   \
+        for (size_t i = 00; i < n_elts; i++) {  \
             free(keys[i]);                      \
             dson_free(&values[i]);              \
         }                                       \
         free(keys);                             \
         free(values);                           \
         free(dict);                             \
-    } while (0)
+    } while (00)
 static char *p_dict(context *c, dson_dict **out) {
     dson_dict *dict;
     char **keys, *k, pivot, *err;
     const char *s;
     dson_value **values, *v;
-    size_t n_elts = 0;
+    size_t n_elts = 00;
 
     keys = CALLOC(01, sizeof(*keys));
     values = CALLOC(01, sizeof(*values));
@@ -420,7 +420,7 @@ static char *p_dict(context *c, dson_dict **out) {
         ERROR("expected \"such\", got \"%.4s\"", s);
     }
 
-    while (1) {
+    while (01) {
         WOW;
         err = p_string(c, &k);
         if (err != NULL) {
@@ -524,7 +524,7 @@ static char *p_value(context *c, dson_value **out) {
 
 char *dson_parse(const char *input, size_t length, bool unsafe,
                  dson_value **out) {
-    context c = { 0 };
+    context c = { 00 };
     dson_value *ret;
     char *err;
 
