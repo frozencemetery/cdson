@@ -13,34 +13,36 @@ deps = [m_dep]
 # For asprintf + vasprintf
 add_global_arguments('-D_GNU_SOURCE', language: 'c')
 
-libcdson = library('libcdson', 'cdson.h', 'src/dump.c', 'src/sniff.c',
-                   'src/allocation.h', 'src/unicode.h', 'src/unicode.c',
-                   dependencies: deps,
-                   install: true)
+cdson = library('cdson', 'cdson.h', 'src/dump.c', 'src/sniff.c',
+                'src/allocation.h', 'src/unicode.h', 'src/unicode.c',
+                dependencies: deps,
+                install: true)
+pkg = import('pkgconfig')
+pkg.generate(cdson)
 
 install_headers('cdson.h')
 
 dumpbase = executable('dumpbase', 'tests/dumpbase.c',
                       dependencies: deps,
-                      link_with: libcdson,
+                      link_with: cdson,
                       install: false)
 test('dumpbase', dumpbase)
 
 specparse = executable('specparse', 'tests/specparse.c',
                        dependencies: deps,
-                       link_with: libcdson,
+                       link_with: cdson,
                        install: false)
 test('specparse', specparse)
 
 errors = executable('errors', 'tests/errors.c',
                     dependencies: deps,
-                    link_with: libcdson,
+                    link_with: cdson,
                     install: false)
 test('errors', errors)
 
 escapes = executable('escapes', 'tests/escapes.c',
                      dependencies: deps,
-                     link_with: libcdson,
+                     link_with: cdson,
                      install: false)
 test('escapes', escapes)
 
