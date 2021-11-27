@@ -1,15 +1,15 @@
 {
     "name": "pull-request",
     "on": {
-	"pull_request": { "branches": "main" },
-	"push": { "branches": "main" },
+        "pull_request": { "branches": "main" },
+        "push": { "branches": "main" },
     },
     "jobs": { "linux": {
         "runs-on": "ubuntu-latest",
         "container": "debian:testing",
         "steps": [
             { "uses": "actions/checkout@v2" },
-            { "run": "apt install -y gcc meson" },
+            { "run": "apt update && apt install -y gcc meson" },
             { "run": "meson setup build" },
             { "run": "ninja -C build test" },
         ],
