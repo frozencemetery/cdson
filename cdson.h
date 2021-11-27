@@ -53,10 +53,32 @@ typedef struct dson_value {
  * supported.  If this is not enough for your purposes and you with to handle
  * the arbitrary control character escaping in your strings as well, pass
  * unsafe=true.  If you are unsure if you need this, you probably don't.  Be
- * safe.
- */
+ * safe. */
 char *dson_parse(const char *input, size_t length, bool unsafe,
                  dson_value **out);
+
+/* Retrieve a specific value from the parsed DSON tree.  This is a shortcut
+ * method for traversing the tree by hand.  v_out is owned by tree; do not
+ * free() v_out.  Returns NULL on success or an error message on failure.
+ * Pass error message to free().
+ *
+ * match_behavior indicates what to do when duplicate keys are encountered in
+ * a dict.  The current options are to return the FIRST result from the input
+ * (i.e., no overriding), the LAST result (i.e., input can override itself),
+ * or to ERROR (i.e., not permit duplicate keys).
+ *
+ * query syntax uses [] for array access and . for dict access, and is
+ * \0-terminated.  An example valid query (excluding quotes) is:
+ * ".alpha[3].beta", while something like "[3{alpha}][2]" would be invalid, as
+ * would "[alpha].beta[2]".  Note that arrays are zero-indexed, and strings
+ * cannot be quoted (else the quotes will be treated as part of the string).
+ * Behavior when query strings contain control characters is undefined
+ * (suggest you don't do that), and strings cannot contain any of "[].". */
+#define DSON_MATCH_FIRST 0
+#define DSON_MATCH_LAST 1
+#define DSON_MATCH_ERROR 2
+char *dson_fetch(dson_value *tree, const char *query, uint8_t match_behavior,
+                 dson_value **v_out);
 
 /* Serialize a DSON object into a UTF-8 bytestream.  All strings must be valid
  * UTF-8.  Pass the returned string to free() to release allocated storage.

@@ -13,7 +13,8 @@ deps = [m_dep]
 # For asprintf + vasprintf
 add_global_arguments('-D_GNU_SOURCE', language: 'c')
 
-cdson = library('cdson', 'cdson.h', 'src/dump.c', 'src/sniff.c',
+cdson = library('cdson', 'cdson.h',
+                'src/dump.c', 'src/sniff.c', 'src/fetch.c',
                 'src/allocation.h', 'src/unicode.h', 'src/unicode.c',
                 dependencies: deps,
                 install: true)
@@ -45,6 +46,12 @@ escapes = executable('escapes', 'tests/escapes.c',
                      link_with: cdson,
                      install: false)
 test('escapes', escapes)
+
+fetching = executable('fetching', 'tests/fetching.c',
+                      dependencies: deps,
+                      link_with: cdson,
+                      install: false)
+test('fetching', fetching)
 
 # Local variables:
 # indent-tabs-mode: nil
