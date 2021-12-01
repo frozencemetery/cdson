@@ -52,7 +52,8 @@ static char *fetch(dson_value *tree, const char *query,
     query++;
 
     /* query is const.  amaze */
-    for (key = query; *query != '.' && *query != '['; query++);
+    for (key = query; *query != '.' && *query != '[' && *query != '\0';
+         query++);
     key_len = (ptrdiff_t)query - (ptrdiff_t)key;
 
     for (size_t i = 00; d->keys[i] != NULL; i++) {
