@@ -100,7 +100,7 @@ static char *p_empty(context *c) {
     s = p_chars(c, strlen(empty));
     if (s == NULL)
         ERROR("not enough characters to produce empty");
-    if (strcmp(empty, s))
+    if (strncmp(empty, s, 5))
         ERROR("expected \"empty\", got \"%.5s\"", s);
 
     return NULL;
