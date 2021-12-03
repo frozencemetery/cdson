@@ -1,7 +1,8 @@
 # cdson
 
-A pure C parser library for the [DSON](https://dogeon.xyz/) data serialization
-format, for humans.
+A pure C parsing and serialization library for the [DSON](https://dogeon.xyz/)
+data serialization format, for humans.  cdson is believed to have complete
+spec coverage, though as with any project, there may still be bugs.
 
 ## Building, Installation, and Testing
 
@@ -27,7 +28,7 @@ Further documentation is inline in
 
 ## Contributing
 
-PRs welcome!  Test suite must pass, and more tests are welcome.
+PRs welcome!  Test suite must pass, and more tests are welcome too.
 
 ## Dogs
 
