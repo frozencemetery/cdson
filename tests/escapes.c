@@ -18,7 +18,7 @@ static char *wag(char *in) {
     if (err != NULL)
         return err;
 
-    err = dson_dump(v, &out_len, &out);
+    err = dson_dump(v, &out, &out_len);
     dson_free(&v);
     if (err != NULL)
         return err;

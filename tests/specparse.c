@@ -49,7 +49,7 @@ static void very(char *s) {
         exit(1);
     }
 
-    msg = dson_dump(v_out, &s_outlen, &s_out);
+    msg = dson_dump(v_out, &s_out, &s_outlen);
     if (msg != NULL) {
         fprintf(stderr, "dump error: %s\n", msg);
         exit(1);

@@ -84,7 +84,7 @@ char *dson_fetch(dson_value *tree, const char *query, uint8_t match_behavior,
  * UTF-8.  Pass the returned string to free() to release allocated storage.
  * Returns NULL on success, or an error message on failure.  Pass error
  * message to free(). */
-char *dson_dump(dson_value *in, size_t *len_out, char **out);
+char *dson_dump(dson_value *in, char **out, size_t *len_out);
 
 /* Recursively free and NULL a DSON object. */
 void dson_free(dson_value **v);

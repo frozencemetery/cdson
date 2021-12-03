@@ -251,7 +251,7 @@ static char *dump_value(buf *b, dson_value *in) {
 }
 
 /* private time.  very bag.  compost amaze */
-char *dson_dump(dson_value *in, size_t *len_out, char **out) {
+char *dson_dump(dson_value *in, char **out, size_t *len_out) {
     buf b;
     char *err;
 

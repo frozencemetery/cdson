@@ -16,7 +16,7 @@ static void shiba(dson_value *v, char *res) {
     fflush(stdout);
 
     reslen = strlen(res);
-    err = dson_dump(v, &l, &prod);
+    err = dson_dump(v, &prod, &l);
     if (err) {
         fprintf(stderr, "Unexpected error: %s\n", err);
         exit(1);

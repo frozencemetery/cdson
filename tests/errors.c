@@ -32,7 +32,7 @@ static void bark(dson_value *v) {
 
     printf("barking...");
     fflush(stdout);
-    err = dson_dump(v, &s_len, &s);
+    err = dson_dump(v, &s, &s_len);
     if (err == NULL) {
         free(s);
         printf("unexpected success\n");
