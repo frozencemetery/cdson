@@ -4,7 +4,21 @@ A pure C parsing and serialization library for the [DSON](https://dogeon.xyz/)
 data serialization format, for humans.  cdson is believed to have complete
 spec coverage, though as with any project, there may still be bugs.
 
-## Building, Installation, and Testing
+## Installation
+
+If you're running Fedora, RHEL 8+ (or a rebuild), CentOS 8+, or Mageia 8, I
+provide a [COPR
+repository](https://copr.fedorainfracloud.org/coprs/rharwood/cdson/).  On
+Fedora, it can be used with:
+
+```shell
+dnf copr enable rharwood/cdson
+dnf install libcdson-devel
+```
+
+Otherwise, keep reading for instructions to build from source.
+
+## Building from source and testing
 
 ```shell
 mkdir build
