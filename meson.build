@@ -11,18 +11,23 @@ cc = meson.get_compiler('c')
 m_dep = cc.find_library('m', required: false)
 deps = [m_dep]
 
-# For asprintf + vasprintf
-add_global_arguments('-D_GNU_SOURCE', language: 'c')
+# For asprintf + vasprintf.
+if not meson.is_subproject()
+    add_global_arguments('-D_GNU_SOURCE', language: 'c')
+endif
 
-cdson = library('cdson', 'cdson.h',
-                'src/dump.c', 'src/sniff.c', 'src/fetch.c',
-                'src/allocation.h', 'src/unicode.h', 'src/unicode.c',
+inc = include_directories('.', 'src')
+cdson = library('cdson',
+                'src/dump.c', 'src/sniff.c', 'src/fetch.c', 'src/unicode.c',
+                include_directories: inc,
                 dependencies: deps,
                 install: true)
 pkg = import('pkgconfig')
 pkg.generate(cdson)
 
 install_headers('cdson.h')
+
+cdson_dep = declare_dependency(include_directories: inc, link_with: cdson)
 
 dumpbase = executable('dumpbase', 'tests/dumpbase.c',
                       dependencies: deps,
