@@ -25,7 +25,7 @@ static char *wag(char *in) {
 
     if (out_len != in_len) {
         free(out);
-        asprintf(&err, "length mismatch: expected %ld, got %ld", in_len,
+        asprintf(&err, "length mismatch: expected %zd, got %zd", in_len,
                  out_len);
         return err;
     } else if (strcmp(in, out)) {

@@ -21,7 +21,7 @@ static void shiba(dson_value *v, char *res) {
         fprintf(stderr, "Unexpected error: %s\n", err);
         exit(1);
     } else if (l != reslen) {
-        fprintf(stderr, "Length mismatch - expected %ld, got %ld\n",
+        fprintf(stderr, "Length mismatch - expected %zd, got %zd\n",
                 reslen, l);
         exit(1);
     } else if (strcmp(res, prod)) {
