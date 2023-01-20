@@ -21,6 +21,7 @@ cdson = library('cdson',
                 'src/dump.c', 'src/sniff.c', 'src/fetch.c', 'src/unicode.c',
                 include_directories: inc,
                 dependencies: deps,
+                version: meson.project_version(),
                 install: true)
 pkg = import('pkgconfig')
 pkg.generate(cdson)
