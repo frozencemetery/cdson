@@ -6,13 +6,10 @@ spec coverage, though as with any project, there may still be bugs.
 
 ## Installation
 
-If you're running Fedora, RHEL 8+ (or a rebuild), CentOS 8+, or Mageia 8, I
-provide a [COPR
-repository](https://copr.fedorainfracloud.org/coprs/rharwood/cdson/).  On
-Fedora, it can be used with:
+If you're running Fedora, RHEL with EPEL enabled, or a rebuild thereof,
+rejoice: cdson is available in your distro:
 
 ```shell
-dnf copr enable rharwood/cdson
 dnf install libcdson-devel
 ```
 
