@@ -25,11 +25,19 @@ static char *wag(char *in) {
 
     if (out_len != in_len) {
         free(out);
-        asprintf(&err, "length mismatch: expected %zd, got %zd", in_len,
-                 out_len);
+        int ret = asprintf(&err, "length mismatch: expected %zd, got %zd",
+                           in_len, out_len);
+        if (ret < 0) {
+            fprintf(stderr, "allocation failed!\n");
+            exit(1);
+        }
         return err;
     } else if (strcmp(in, out)) {
-        asprintf(&err, "strings don't match - got %s\n", out);
+        int ret = asprintf(&err, "strings don't match - got %s\n", out);
+        if (ret < 0) {
+            fprintf(stderr, "allocation failed!\n");
+            exit(1);
+        }
         free(out);
         return err;
     }
